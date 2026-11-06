@@ -727,11 +727,10 @@ function load() {
       }
     }
   }
-  if (!Array.isArray(db.coaches)) db.coaches = [];
   const hasModernSchedule = db.fixtures.some((f: any) => f.comp === 'cup' && f.cupPath === 'regions_qual' && f.date === '2026-07-21');
-  if (!hasModernSchedule || !db.cupState2026) {
+  if (!db.settings.manualDraw && (!hasModernSchedule || !db.cupState2026)) {
     genSeason('2026-07-18', S());
-  } else {
+  } else if (db.cupState2026 && db.fixtures.length) {
     recalculateCupGroups(db.cupState2026, db.fixtures);
   }
 
@@ -1568,14 +1567,40 @@ function agg() {
 const invalidateAgg = () => { aggCache = null; };
 
 /* ───────── LLM ───────── */
+function getGeminiKeys(): string[] {
+  const raw: string[] = [];
+  if (process.env.GEMINI_API_KEYS) raw.push(...process.env.GEMINI_API_KEYS.split(/[\n,;]+/));
+  if (process.env.GEMINI_API_KEY) raw.push(...process.env.GEMINI_API_KEY.split(/[\n,;]+/));
+  for (let i = 1; i <= 10; i++) {
+    const k = (process.env as any)[`GEMINI_API_KEY_${i}`];
+    if (k) raw.push(k);
+  }
+  const dbG = db.settings?.keys?.gemini;
+  if (typeof dbG === 'string') raw.push(...dbG.split(/[\n,;]+/));
+  else if (Array.isArray(dbG)) raw.push(...dbG);
+
+  const seen = new Set<string>();
+  const res: string[] = [];
+  for (const s of raw) {
+    const clean = String(s || '').trim();
+    if (clean && !seen.has(clean) && !clean.includes('•')) {
+      seen.add(clean);
+      res.push(clean);
+    }
+  }
+  return res;
+}
 function provList() {
   const k = db.settings.keys || {}, m = db.settings.models || {}, L: any[] = [];
-  const g = process.env.GEMINI_API_KEY || k.gemini;
+  const gKeys = getGeminiKeys();
   const q = process.env.GROQ_API_KEY || k.groq;
   const o = process.env.OPENROUTER_API_KEY || k.openrouter;
-  if (g) L.push({ n: 'gemini', key: g, model: process.env.GEMINI_MODEL || m.gemini || 'gemini-3.8-flash', max: 32000 });
-  if (q) L.push({ n: 'groq', key: q, base: 'https://api.groq.com/openai/v1', model: process.env.GROQ_MODEL || m.groq || 'openai/gpt-oss-120b', max: 8000 });
-  if (o) L.push({ n: 'openrouter', key: o, base: 'https://openrouter.ai/api/v1', model: process.env.OPENROUTER_MODEL || m.openrouter || 'openrouter/free', max: 8000 });
+  const gModel = process.env.GEMINI_MODEL || m.gemini || 'gemini-3.8-flash';
+  for (let i = 0; i < gKeys.length; i++) {
+    L.push({ n: 'gemini', id: `gemini_proj_${i + 1}`, key: gKeys[i], model: gModel, max: 32000 });
+  }
+  if (q) L.push({ n: 'groq', id: 'groq', key: q, base: 'https://api.groq.com/openai/v1', model: process.env.GROQ_MODEL || m.groq || 'openai/gpt-oss-120b', max: 8000 });
+  if (o) L.push({ n: 'openrouter', id: 'openrouter', key: o, base: 'https://openrouter.ai/api/v1', model: process.env.OPENROUTER_MODEL || m.openrouter || 'openrouter/free', max: 8000 });
   return L;
 }
 const hasLLM = () => provList().length > 0;
@@ -1626,12 +1651,16 @@ async function llm(sys: string, user: string, { json = true, task = '', temp = 0
       try {
         const text = await callProv(p, sys, user, { json, temp, max, grounded });
         if (!text.trim()) throw new Error('пустой ответ');
-        llog({ task, p: p.n, ok: 1, ms: Date.now() - t0 });
+        llog({ task, p: p.id || p.n, ok: 1, ms: Date.now() - t0 });
         return text;
       } catch (e: any) {
         last = e;
-        llog({ task, p: p.n, ok: 0, ms: Date.now() - t0, err: e.message.slice(0, 160) });
-        if (e.status === 429) { await sleep(2500); break; }
+        llog({ task, p: p.id || p.n, ok: 0, ms: Date.now() - t0, err: e.message.slice(0, 160) });
+        if (e.status === 429) {
+          console.warn(`[LLM Failover] Ключ ${p.id || p.n} исчерпал лимит (HTTP 429). Мгновенное переключение на резервный ключ...`);
+          await sleep(500);
+          break;
+        }
         if (e.status >= 500 || e.name === 'AbortError') await sleep(1500);
         else if (e.status) break;
       }
@@ -3814,7 +3843,8 @@ app.get('/api/admin/overview', admin, (req, res) => {
       systemPrompt: db.settings.systemPrompt || SYS_DEFAULT
     },
     keys: {
-      gemini: !!(process.env.GEMINI_API_KEY || db.settings.keys.gemini),
+      gemini: !!(getGeminiKeys().length),
+      geminiCount: getGeminiKeys().length,
       groq: !!(process.env.GROQ_API_KEY || db.settings.keys.groq),
       openrouter: !!(process.env.OPENROUTER_API_KEY || db.settings.keys.openrouter)
     },
@@ -3870,8 +3900,19 @@ app.post('/api/admin/season', admin, (req, res) => {
     return fail(res, 'Для этого сезона расписание уже есть. Измените название сезона или подтвердите пересоздание.');
   }
   if (db.settings.season === name) db.fixtures = db.fixtures.filter((f: any) => f.season !== name);
+  db.settings.manualDraw = false;
   genSeason(start, name);
+  save();
   res.json({ ok: 1, fixtures: seasonFx().length });
+});
+
+app.post('/api/admin/clear-fixtures', admin, (req, res) => {
+  db.fixtures = [];
+  db.cupState2026 = null;
+  db.settings.manualDraw = true;
+  invalidateAgg();
+  save();
+  res.json({ ok: 1, message: 'Все турнирные матчи очищены. База готова к новой жеребьёвке.' });
 });
 
 app.post('/api/admin/team', admin, (req, res) => {

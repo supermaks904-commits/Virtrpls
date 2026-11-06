@@ -3245,11 +3245,10 @@ function load() {
       }
     }
   }
-  if (!Array.isArray(db.coaches)) db.coaches = [];
   const hasModernSchedule = db.fixtures.some((f) => f.comp === "cup" && f.cupPath === "regions_qual" && f.date === "2026-07-21");
-  if (!hasModernSchedule || !db.cupState2026) {
+  if (!db.settings.manualDraw && (!hasModernSchedule || !db.cupState2026)) {
     genSeason("2026-07-18", S());
-  } else {
+  } else if (db.cupState2026 && db.fixtures.length) {
     recalculateCupGroups(db.cupState2026, db.fixtures);
   }
   ensureInitialTransfers();
@@ -4069,14 +4068,39 @@ function agg() {
 var invalidateAgg = () => {
   aggCache = null;
 };
+function getGeminiKeys() {
+  const raw = [];
+  if (process.env.GEMINI_API_KEYS) raw.push(...process.env.GEMINI_API_KEYS.split(/[\n,;]+/));
+  if (process.env.GEMINI_API_KEY) raw.push(...process.env.GEMINI_API_KEY.split(/[\n,;]+/));
+  for (let i = 1; i <= 10; i++) {
+    const k = process.env[`GEMINI_API_KEY_${i}`];
+    if (k) raw.push(k);
+  }
+  const dbG = db.settings?.keys?.gemini;
+  if (typeof dbG === "string") raw.push(...dbG.split(/[\n,;]+/));
+  else if (Array.isArray(dbG)) raw.push(...dbG);
+  const seen = /* @__PURE__ */ new Set();
+  const res = [];
+  for (const s of raw) {
+    const clean = String(s || "").trim();
+    if (clean && !seen.has(clean) && !clean.includes("\u2022")) {
+      seen.add(clean);
+      res.push(clean);
+    }
+  }
+  return res;
+}
 function provList() {
   const k = db.settings.keys || {}, m = db.settings.models || {}, L = [];
-  const g = process.env.GEMINI_API_KEY || k.gemini;
+  const gKeys = getGeminiKeys();
   const q = process.env.GROQ_API_KEY || k.groq;
   const o = process.env.OPENROUTER_API_KEY || k.openrouter;
-  if (g) L.push({ n: "gemini", key: g, model: process.env.GEMINI_MODEL || m.gemini || "gemini-3.8-flash", max: 32e3 });
-  if (q) L.push({ n: "groq", key: q, base: "https://api.groq.com/openai/v1", model: process.env.GROQ_MODEL || m.groq || "openai/gpt-oss-120b", max: 8e3 });
-  if (o) L.push({ n: "openrouter", key: o, base: "https://openrouter.ai/api/v1", model: process.env.OPENROUTER_MODEL || m.openrouter || "openrouter/free", max: 8e3 });
+  const gModel = process.env.GEMINI_MODEL || m.gemini || "gemini-3.8-flash";
+  for (let i = 0; i < gKeys.length; i++) {
+    L.push({ n: "gemini", id: `gemini_proj_${i + 1}`, key: gKeys[i], model: gModel, max: 32e3 });
+  }
+  if (q) L.push({ n: "groq", id: "groq", key: q, base: "https://api.groq.com/openai/v1", model: process.env.GROQ_MODEL || m.groq || "openai/gpt-oss-120b", max: 8e3 });
+  if (o) L.push({ n: "openrouter", id: "openrouter", key: o, base: "https://openrouter.ai/api/v1", model: process.env.OPENROUTER_MODEL || m.openrouter || "openrouter/free", max: 8e3 });
   return L;
 }
 var hasLLM = () => provList().length > 0;
@@ -4133,13 +4157,14 @@ async function llm(sys, user, { json = true, task = "", temp = 0.9, max = 16e3, 
       try {
         const text = await callProv(p, sys, user, { json, temp, max, grounded });
         if (!text.trim()) throw new Error("\u043F\u0443\u0441\u0442\u043E\u0439 \u043E\u0442\u0432\u0435\u0442");
-        llog({ task, p: p.n, ok: 1, ms: Date.now() - t0 });
+        llog({ task, p: p.id || p.n, ok: 1, ms: Date.now() - t0 });
         return text;
       } catch (e) {
         last = e;
-        llog({ task, p: p.n, ok: 0, ms: Date.now() - t0, err: e.message.slice(0, 160) });
+        llog({ task, p: p.id || p.n, ok: 0, ms: Date.now() - t0, err: e.message.slice(0, 160) });
         if (e.status === 429) {
-          await sleep(2500);
+          console.warn(`[LLM Failover] \u041A\u043B\u044E\u0447 ${p.id || p.n} \u0438\u0441\u0447\u0435\u0440\u043F\u0430\u043B \u043B\u0438\u043C\u0438\u0442 (HTTP 429). \u041C\u0433\u043D\u043E\u0432\u0435\u043D\u043D\u043E\u0435 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043D\u0430 \u0440\u0435\u0437\u0435\u0440\u0432\u043D\u044B\u0439 \u043A\u043B\u044E\u0447...`);
+          await sleep(500);
           break;
         }
         if (e.status >= 500 || e.name === "AbortError") await sleep(1500);
@@ -6375,7 +6400,8 @@ app.get("/api/admin/overview", admin, (req, res) => {
       systemPrompt: db.settings.systemPrompt || SYS_DEFAULT
     },
     keys: {
-      gemini: !!(process.env.GEMINI_API_KEY || db.settings.keys.gemini),
+      gemini: !!getGeminiKeys().length,
+      geminiCount: getGeminiKeys().length,
       groq: !!(process.env.GROQ_API_KEY || db.settings.keys.groq),
       openrouter: !!(process.env.OPENROUTER_API_KEY || db.settings.keys.openrouter)
     },
@@ -6429,8 +6455,18 @@ app.post("/api/admin/season", admin, (req, res) => {
     return fail(res, "\u0414\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0441\u0435\u0437\u043E\u043D\u0430 \u0440\u0430\u0441\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0443\u0436\u0435 \u0435\u0441\u0442\u044C. \u0418\u0437\u043C\u0435\u043D\u0438\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0441\u0435\u0437\u043E\u043D\u0430 \u0438\u043B\u0438 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \u043F\u0435\u0440\u0435\u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435.");
   }
   if (db.settings.season === name) db.fixtures = db.fixtures.filter((f) => f.season !== name);
+  db.settings.manualDraw = false;
   genSeason(start, name);
+  save();
   res.json({ ok: 1, fixtures: seasonFx().length });
+});
+app.post("/api/admin/clear-fixtures", admin, (req, res) => {
+  db.fixtures = [];
+  db.cupState2026 = null;
+  db.settings.manualDraw = true;
+  invalidateAgg();
+  save();
+  res.json({ ok: 1, message: "\u0412\u0441\u0435 \u0442\u0443\u0440\u043D\u0438\u0440\u043D\u044B\u0435 \u043C\u0430\u0442\u0447\u0438 \u043E\u0447\u0438\u0449\u0435\u043D\u044B. \u0411\u0430\u0437\u0430 \u0433\u043E\u0442\u043E\u0432\u0430 \u043A \u043D\u043E\u0432\u043E\u0439 \u0436\u0435\u0440\u0435\u0431\u044C\u0451\u0432\u043A\u0435." });
 });
 app.post("/api/admin/team", admin, (req, res) => {
   const b = req.body;
