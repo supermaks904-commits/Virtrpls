@@ -813,7 +813,6 @@ const tableHtml = (rows, opts = {}) => {
         <span class="pos">${r.pos}</span>
         ${logo ? `<img class="t-logo" src="${logo}" alt="${e(r.name)}" loading="lazy" onerror="this.style.display='none'"/>` : ''}
         <span>${e(r.name)}</span>
-        ${badgeHtml}
       </div>
     </td>
     <td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}–${r.ga}</td><td>${r.gd > 0 ? '+' : ''}${r.gd}</td><td><b>${r.pts}</b></td><td class="l muted">${e(r.form)}</td></tr>`;
