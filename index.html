@@ -35,26 +35,93 @@ h1{font:700 24px Unbounded,sans-serif;margin:6px 0 16px;letter-spacing:-.01em}
 h2{font:600 17px Onest;margin:22px 0 10px}
 h3{font:600 15px Onest;margin:0 0 8px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.03)}
-.wrap{overflow-x:hidden;max-width:100%}
+.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;width:100%;display:block;position:relative;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.wrap::-webkit-scrollbar{height:6px}
+.wrap::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.scroll-hint{display:none;font-size:11px;color:var(--muted);margin-bottom:6px;align-items:center;gap:5px;font-weight:500}
+@media(max-width:768px){.scroll-hint{display:flex}}
 .grid{display:grid;gap:16px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
 @media(max-width:820px){.g2,.g3{grid-template-columns:1fr}}
-@media(max-width:640px){
-  .bar{padding:8px 10px;gap:8px}
-  nav{width:100%;order:3;flex-wrap:wrap;gap:4px}
-  nav a{font-size:12px;padding:4px 8px}
-  main{padding:10px 8px 48px}
-  h1{font-size:19px}
-  .panel{padding:12px 10px}
-  .row{gap:6px}
-  .row > *{min-width:0;max-width:100%}
-  table{table-layout:fixed;width:100%;font-size:11px}
-  th,td{padding:5px 3px !important;word-wrap:break-word;overflow-wrap:break-word}
-  .score .line{gap:6px}
-  .score .num{font-size:22px;min-width:54px}
-  .score .tm{font-size:13px}
-  .t-logo.lg{width:32px;height:32px}
-  .tabs{flex-wrap:wrap;gap:4px}
-  .tabs button{font-size:12px;padding:6px 8px}
+@media(max-width:680px){
+  .bar{padding:8px 12px;gap:8px;justify-content:space-between}
+  nav{width:100%;order:3;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding:4px 0 2px;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav a{font-size:12.5px;padding:6px 11px;white-space:nowrap;flex-shrink:0}
+  .who{order:2;margin-left:auto;font-size:12px}
+  main{padding:12px 10px 50px}
+  h1{font-size:18px}
+  .panel{padding:14px 12px;border-radius:10px}
+  .row{gap:8px}
+  .tabs{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:4px;margin-bottom:12px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{font-size:12.5px;padding:6px 10px;white-space:nowrap;flex-shrink:0}
+  .wrap{
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    margin-left:-4px;
+    margin-right:-4px;
+    padding-bottom:6px;
+  }
+  .wrap table{
+    width:max-content !important;
+    min-width:620px !important;
+    table-layout:auto !important;
+    border-collapse:separate !important;
+    border-spacing:0 !important;
+  }
+  th,td{
+    padding:8px 10px !important;
+    white-space:nowrap !important;
+    word-break:normal !important;
+    overflow-wrap:normal !important;
+    font-size:12.5px !important;
+  }
+  .wrap table th:first-child,
+  .wrap table td:first-child{
+    position:sticky !important;
+    left:0 !important;
+    z-index:2 !important;
+    background:var(--panel) !important;
+    box-shadow:2px 0 6px rgba(16,38,28,0.08) !important;
+    min-width:155px !important;
+    max-width:195px !important;
+  }
+  .wrap table th:first-child{
+    z-index:3 !important;
+    background:var(--panel) !important;
+  }
+  tr:hover td:first-child{
+    background:var(--soft) !important;
+  }
+  .score{padding:16px 12px;border-radius:10px}
+  .score .line{gap:8px;margin:8px 0}
+  .score .num{font-size:24px;min-width:58px;padding:3px 10px}
+  .score .tm{font-size:13.5px;line-height:1.25}
+  .score .t-logo.lg{width:34px;height:34px}
+  .score .meta{font-size:11.5px}
+  .t-logo.xl{width:56px;height:56px}
+  .pitch-container{padding:14px 4px;margin:12px 0;border-radius:10px}
+  .pitch-row{margin:10px 0}
+  .pitch-player{min-width:54px}
+  .pitch-player-avatar{width:32px;height:32px}
+  .pitch-player-avatar img{width:18px;height:18px}
+  .pitch-player-rating{font-size:9px;padding:0 3px;top:-4px;right:-6px}
+  .pitch-player-name{font-size:9.5px;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+  .pitch-player-team{font-size:8.5px;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pitch-player-stat{font-size:8.5px;padding:1px 3px}
+  .cal-container{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .cal-grid,.cal-weekday{min-width:440px}
+  .cal-cell{min-height:68px;padding:3px}
+  .cal-month-pills{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .awards-grid{grid-template-columns:1fr;gap:10px}
+  .cup-groups-grid{grid-template-columns:1fr;gap:12px}
+  .comp-banner{padding:10px 12px;gap:10px}
+  .comp-banner-logo{width:42px;height:42px}
+  .comp-banner-title{font-size:17px}
+  .comp-banner-sub{font-size:12px}
+  .modal{padding:10px 6px}
+  .modal>div{padding:16px 12px;border-radius:10px;max-width:100%}
+  .filter-pills{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
 }
 .muted{color:var(--muted)}.small{font-size:13px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.sp{justify-content:space-between}
@@ -607,7 +674,18 @@ function drawChrome() {
   });
 }
 
-window.addEventListener('hashchange', () => { drawChrome(); route(); });
+let PREV_HASH = '#/';
+window.addEventListener('hashchange', (ev) => {
+  const oldUrl = ev.oldURL;
+  if (oldUrl && oldUrl.includes('#')) {
+    const oldHash = '#' + oldUrl.split('#')[1];
+    if (!oldHash.startsWith('#/match/')) {
+      PREV_HASH = oldHash;
+    }
+  }
+  drawChrome();
+  route();
+});
 
 function route() {
   if (S.es) { S.es.close(); S.es = null; }
@@ -735,12 +813,13 @@ const tableHtml = (rows, opts = {}) => {
         <span class="pos">${r.pos}</span>
         ${logo ? `<img class="t-logo" src="${logo}" alt="${e(r.name)}" loading="lazy" onerror="this.style.display='none'"/>` : ''}
         <span>${e(r.name)}</span>
+        ${badgeHtml}
       </div>
     </td>
     <td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}–${r.ga}</td><td>${r.gd > 0 ? '+' : ''}${r.gd}</td><td><b>${r.pts}</b></td><td class="l muted">${e(r.form)}</td></tr>`;
   }).join('');
 
-  return `<div class="wrap"><table><thead><tr><th class="l">Команда</th><th>И</th><th>В</th><th>Н</th><th>П</th><th>Мячи</th><th>РМ</th><th>О</th><th class="l">Форма</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+  return `<div class="scroll-hint"><span>👉 Прокручивайте таблицу вправо</span></div><div class="wrap"><table><thead><tr><th class="l">Команда</th><th>И</th><th>В</th><th>Н</th><th>П</th><th>Мячи</th><th>РМ</th><th>О</th><th class="l">Форма</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
 };
 
 /* ───── вход ───── */
@@ -1604,7 +1683,7 @@ function drawMatch(app, id) {
 
   app.innerHTML = `
   <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px">
-    <a href="javascript:history.back()" class="btn alt sm">← Назад</a>
+    <button id="btn-back" class="btn alt sm" type="button" style="cursor:pointer">← Назад</button>
     <span class="muted small">${e(c ? c.comp + (c.roundLabel ? ' · ' + c.roundLabel : '') : f.label)}</span>
   </div>
   <div class="score">
@@ -1639,6 +1718,20 @@ ${motm && motmPlayer ? `
 </div>` : ''}
 <div class="tabs" id="mt">${[['live', 'Трансляция'], ['stats', 'Статистика'], ['lineups', 'Составы'], ...(motm || f.status === 'done' ? [['interview', 'Интервью и MOTM']] : []), ...(S.me?.role === 'admin' ? [['admin', 'Админ']] : [])].map(([k, t]) => `<button data-k="${k}" class="${k === mtab ? 'on' : ''}">${t}</button>`).join('')}</div>
 <div id="mbody"></div>`;
+
+  const bBack = app.querySelector('#btn-back');
+  if (bBack) {
+    bBack.onclick = (ev) => {
+      ev.preventDefault();
+      if (PREV_HASH && PREV_HASH !== location.hash && !PREV_HASH.startsWith('#/match/')) {
+        location.hash = PREV_HASH;
+      } else if (f.comp) {
+        location.hash = `#/fixtures/${f.comp}`;
+      } else {
+        location.hash = '#/';
+      }
+    };
+  }
 
   $('#mt').onclick = ev => {
     const k = ev.target.dataset.k;
@@ -1939,8 +2032,10 @@ async function pgLeaders(app) {
     tabContent = `
     <div class="tabs"><button data-v="p" class="${LD.view === 'p' ? 'on' : ''}">Игроки</button><button data-v="t" class="${LD.view === 't' ? 'on' : ''}">Команды</button></div>
     ${LD.view === 'p' ? `<div class="row" style="margin-bottom:12px;gap:6px;flex-wrap:wrap">${PM.map(([k, t]) => `<button class="btn sm ${k === LD.metric ? '' : 'alt'}" data-m="${k}">${t}</button>`).join('')}</div>
+      ${pc.length && sortedPlayers.length ? '<div class="scroll-hint"><span>👉 Прокручивайте таблицу вправо</span></div>' : ''}
       <div class="panel wrap">${pc.length ? (sortedPlayers.length ? `<table><thead><tr><th>#</th><th class="l">Игрок</th><th class="l">Команда</th><th>Матчи</th><th>${metricLabel}</th></tr></thead><tbody>${sortedPlayers.slice(0, 50).map((x, i) => `<tr><td class="pos">${i + 1}</td><td class="l">${e(x.n)}</td><td class="l muted"><div class="t-cell">${x.teamLogo ? `<img class="t-logo" src="${x.teamLogo}" alt=""/>` : ''}<span>${e(x.team)}</span></div></td><td>${x.m}</td><td><b>${LD.metric === 'xg' ? (+x[LD.metric]).toFixed(2) : x[LD.metric]}</b></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Пока нет игроков с показателем больше нуля в сыгранных матчах.</div>') : '<div class="empty">Статистика появится после первых полностью сыгранных матчей (запустите тур в разделе «Расписание»).</div>'}</div>`
-    : `<div class="panel wrap">${teamsList.length ? `<table><thead><tr><th class="l">Команда</th>${TC.map(([k, t]) => `<th class="s" data-s="${k}">${t}${LD.sort === k ? ' ▾' : ''}</th>`).join('')}</tr></thead><tbody>${[...teamsList].map(x => ({ ...x })).sort((a, b) => (b[LD.sort] || 0) - (a[LD.sort] || 0)).map(x => `<tr><td class="l"><div class="t-cell">${x.teamLogo ? `<img class="t-logo" src="${x.teamLogo}" alt=""/>` : ''}<span>${e(x.team)}</span></div></td>${TC.map(([k]) => `<td>${k === 'xg' || k === 'xga' ? (+x[k]).toFixed(2) : (x[k] || 0)}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="small muted" style="margin-top:8px">Суд+ — ошибки арбитра в пользу команды, Суд− — против. Пен+ / Пен− — пенальти в пользу / против. ПР — пропущенные мячи.</p>` : '<div class="empty">Статистика команд появится после первых сыгранных матчей.</div>'}</div>`}`;
+    : `${teamsList.length ? '<div class="scroll-hint"><span>👉 Прокручивайте таблицу вправо (18 показателей)</span></div>' : ''}
+      <div class="panel wrap">${teamsList.length ? `<table><thead><tr><th class="l">Команда</th>${TC.map(([k, t]) => `<th class="s" data-s="${k}">${t}${LD.sort === k ? ' ▾' : ''}</th>`).join('')}</tr></thead><tbody>${[...teamsList].map(x => ({ ...x })).sort((a, b) => (b[LD.sort] || 0) - (a[LD.sort] || 0)).map(x => `<tr><td class="l"><div class="t-cell">${x.teamLogo ? `<img class="t-logo" src="${x.teamLogo}" alt=""/>` : ''}<span>${e(x.team)}</span></div></td>${TC.map(([k]) => `<td>${k === 'xg' || k === 'xga' ? (+x[k]).toFixed(2) : (x[k] || 0)}</td>`).join('')}</tr>`).join('')}</tbody></table><p class="small muted" style="margin-top:8px">Суд+ — ошибки арбитра в пользу команды, Суд− — против. Пен+ / Пен− — пенальти в пользу / против. ПР — пропущенные мячи.</p>` : '<div class="empty">Статистика команд появится после первых сыгранных матчей.</div>'}</div>`}`;
   } else if (LD.tab === 'round') {
     const rData = await api(`/awards/round?comp=${LD.comp}${LD.round ? '&round=' + encodeURIComponent(LD.round) : ''}`);
     const rounds = rData.availableRounds || [];
@@ -4480,7 +4575,7 @@ async function pgNational(app) {
 
   const renderPlayersTable = (list, canEdit) => {
     if (!list.length) return '<div class="empty">Состав на ближайшую паузу ещё не опубликован.</div>';
-    return `<div class="wrap"><table>
+    return `<div class="scroll-hint"><span>👉 Прокручивайте состав вправо</span></div><div class="wrap"><table>
       <thead><tr><th>#</th><th class="l">Игрок</th><th>Поз.</th><th class="l">Клуб</th><th>Матчи</th><th>Голы</th><th>Пасы</th><th>Рейтинг</th>${canEdit ? '<th></th>' : ''}</tr></thead>
       <tbody>
         ${list.map((p, i) => `<tr>
