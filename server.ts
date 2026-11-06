@@ -1858,12 +1858,34 @@ function fatText(tid: string, f: any) {
   if (f.away === tid) { const d = km(team(f.away), team(f.home)); if (d) s += ` Дорога в гости ≈ ${d} км.`; }
   return s;
 }
+function teamStatsSummary(tid: string, comp: string) {
+  const allP = Object.values<any>(agg().P).filter(x => x.t === tid && x.comp === comp);
+  const topG = allP.filter(x => x.g > 0).sort((a, b) => b.g - a.g).slice(0, 3).map(x => `${x.n} (${x.g} гол.)`);
+  const topA = allP.filter(x => x.a > 0).sort((a, b) => b.a - a.a).slice(0, 3).map(x => `${x.n} (${x.a} пас.)`);
+  const cards = allP.filter(x => (x.yc || 0) + (x.rc || 0) * 2 > 0).sort((a, b) => (b.yc + b.rc * 2) - (a.yc + a.rc * 2)).slice(0, 3).map(x => `${x.n} (${x.yc} ЖК${x.rc ? `, ${x.rc} КК` : ''})`);
+  const tStats = Object.values<any>(agg().T).find(x => x.tid === tid && x.comp === comp);
+  let res = '';
+  if (topG.length) res += `Бомбардиры: ${topG.join(', ')}. `;
+  if (topA.length) res += `Ассистенты: ${topA.join(', ')}. `;
+  if (cards.length) res += `Дисциплина (риск нарушений): ${cards.join(', ')}. `;
+  if (tStats) res += `Командные показатели (${tStats.m} игр): забито ${tStats.g || 0}, xG ${+(tStats.xg || 0).toFixed(1)}, фолы ${tStats.fo || 0}, ЖК ${tStats.yc || 0}${tStats.rc ? `, КК ${tStats.rc}` : ''}.`;
+  return res.trim() || 'Статистика сезона накапливается (первые туры чемпионата).';
+}
+function staffSummary(tid: string) {
+  const staff = getStaffForTeam(tid);
+  if (!staff.length) return 'нет данных о расширенном штабе';
+  return staff.slice(0, 4).map(s => `${s.roleTitle || s.role}: ${s.name}`).join('; ');
+}
 function cardLine(p: any, date: string) {
+  if (!p) return 'Игрок (нет данных)';
   const a = age(p, date), ag = agg().P;
   let seas = '';
   const row = Object.values<any>(ag).filter(x => x.pid === p.id && x.comp === 'rpl')[0];
-  if (row) seas = ` В этом сезоне в игре: ${row.m} матчей, ${row.g} гол., ${row.a} пас.`;
-  return `${p.pos} ${p.name}${a ? `, ${a} лет` : ''} — стиль: ${p.style || 'нет данных'}. Достижения: ${(p.achievements || []).join('; ') || 'нет данных'}. Статистика 2 сезонов: ${p.stats2y || 'нет данных'}. Форма: ${p.form || 'нет данных'}.${seas} Характер: ${p.character || 'нет данных'}. Новости: ${p.news || 'нет'}.`;
+  if (row) seas = ` В сезоне: ${row.m} игр, ${row.g} гол., ${row.a} пас., ${row.yc || 0} ЖК${row.rc ? `, ${row.rc} КК` : ''}${row.cs ? `, ${row.cs} сухих матчей` : ''}.`;
+  const foot = p.foot ? `, рабочая нога: ${p.foot}` : '';
+  const nat = p.nation ? `, гражданство: ${p.nation}` : (p.nat ? `, страна: ${p.nat}` : '');
+  const real = p.realClub ? `, реальный клуб: ${p.realClub}` : '';
+  return `${p.pos || 'ПЗ'} ${p.name}${a ? `, ${a} лет` : ''}${nat}${foot}${real} — стиль: ${p.style || 'сбалансированный'}. Достижения: ${(p.achievements || []).join('; ') || 'опыт выступлений'}. Статистика 2 сезонов: ${p.stats2y || 'регулярная игровая практика'}. Форма: ${p.form || 'стабильная'}.${seas} Характер: ${p.character || 'хладнокровный, командный игрок'}. Новости: ${p.news || 'готовится к матчу в штатном режиме'}.`;
 }
 async function buildCtx(f: any) {
   const ctx: any = { fid: f.id, comp: compName(f), roundLabel: roundLabel(f), date: f.date, time: f.time, names: {}, pidSide: {}, pidTeam: {}, pos: {}, lineup: {}, sides: {} };
@@ -1886,7 +1908,7 @@ async function buildCtx(f: any) {
     }
   }
   const dv = db.derbies.find((d: any) => (d.a === f.home && d.b === f.away) || (d.a === f.away && d.b === f.home));
-  ctx.derby = dv ? `${dv.name}. ${dv.note}` : 'нет';
+  ctx.derby = dv ? `${dv.name}. ${dv.note}` : 'нет (обычный календарный матч)';
   ctx.motiv = { home: motivText(f.home, f), away: motivText(f.away, f) };
   const top = Object.values<any>(agg().P).filter(x => x.comp === 'rpl' && x.g > 0).sort((a: any, b: any) => b.g - a.g).slice(0, 5);
   ctx.race = top.length ? top.map((x: any) => `${x.n} (${tn(x.t)}) — ${x.g}`).join('; ') : 'пока нет данных';
@@ -1897,41 +1919,142 @@ async function buildCtx(f: any) {
 
   const cH = getCoachForTeam(f.home), cA = getCoachForTeam(f.away);
   ctx.coaches = {
-    home: { coach: cH, synergy: computeCoachSynergy(cH, ctx.lineup.home) },
-    away: { coach: cA, synergy: computeCoachSynergy(cA, ctx.lineup.away) }
+    home: { coach: cH, synergy: computeCoachSynergy(cH, ctx.lineup.home), staff: getStaffForTeam(f.home) },
+    away: { coach: cA, synergy: computeCoachSynergy(cA, ctx.lineup.away), staff: getStaffForTeam(f.away) }
+  };
+  ctx.teamStats = {
+    home: teamStatsSummary(f.home, f.comp),
+    away: teamStatsSummary(f.away, f.comp)
+  };
+  ctx.staff = {
+    home: staffSummary(f.home),
+    away: staffSummary(f.away)
+  };
+  const comp = f.comp;
+  const rows = table(comp, f.date);
+  const rH = rows.find((x: any) => x.id === f.home);
+  const rA = rows.find((x: any) => x.id === f.away);
+  ctx.tableStandings = {
+    home: rH ? `${rH.pos}-е место (${rH.pts} очк., ${rH.p} игр, ${rH.w}В ${rH.d}Н ${rH.l}П, мячи ${rH.gf}-${rH.ga}, разница ${rH.gd >= 0 ? '+' + rH.gd : rH.gd}, форма: ${rH.form || '—'}, зона: ${rH.zoneLabel || 'середина таблицы'})` : 'начало турнира',
+    away: rA ? `${rA.pos}-е место (${rA.pts} очк., ${rA.p} игр, ${rA.w}В ${rA.d}Н ${rA.l}П, мячи ${rA.gf}-${rA.ga}, разница ${rA.gd >= 0 ? '+' + rA.gd : rA.gd}, форма: ${rA.form || '—'}, зона: ${rA.zoneLabel || 'середина таблицы'})` : 'начало турнира'
+  };
+
+  if (!f.refereeName && (f.comp === 'rpl' || f.comp === 'cup')) {
+    assignReferee(f);
+  }
+  const headRef = db.referees?.find((r: any) => r.id === f.refereeId || r.name === f.refereeName) || (f.refereeName ? {
+    name: f.refereeName,
+    city: 'Россия',
+    style: 'balanced',
+    styleDesc: 'Последовательный арбитр, держит дисциплину',
+    rating: 7.5,
+    bio: `Главный арбитр встречи — ${f.refereeName}`,
+    matches: 0, yellows: 0, reds: 0, penalties: 0
+  } : null);
+  const varRef = db.referees?.find((r: any) => r.name === f.varReferee) || (f.varReferee ? {
+    name: f.varReferee,
+    style: 'ВАР-арбитр',
+    styleDesc: 'Опытный видеоассистент VAR',
+    bio: `Арбитр VAR — ${f.varReferee}`
+  } : null);
+  const assts = Array.isArray(f.assistants) && f.assistants.length >= 2 ? f.assistants : ['Дмитрий Мосякин', 'Валентин Мурашов'];
+  ctx.refereeCrew = {
+    head: headRef,
+    asst1: assts[0],
+    asst2: assts[1],
+    fourth: f.reserveReferee || 'Вера Опейкина',
+    var: f.varReferee || (f.comp === 'rpl' ? 'Сергей Карасев' : null),
+    varProfile: varRef,
+    avar: f.avarReferee || (f.comp === 'rpl' ? 'Павел Кукуян' : null)
   };
   return ctx;
 }
 function lineText(ctx: any, s: string) {
   const L = ctx.lineup[s], f = ctx.date, sd = ctx.sides[s];
   const row = (pid: string) => cardLine(player(pid), f);
-  return `СОСТАВ ${sd.name} (схема ${L.formation}), стартовые:\n${L.starters.map((p: string) => '- ' + row(p)).join('\n')}\nСкамейка:\n${L.bench.map((p: string) => '- ' + row(p)).join('\n')}\nНедоступны: ${ctx.missing[s].join(', ') || 'нет'}`;
+  return `СОСТАВ ${sd.name} (схема ${L.formation}), стартовые 11:\n${L.starters.map((p: string) => '- ' + row(p)).join('\n')}\nСкамейка запасных:\n${L.bench.map((p: string) => '- ' + row(p)).join('\n')}\nНедоступны (травмы/дисквалификации): ${ctx.missing[s].join(', ') || 'нет'}`;
 }
 function buildUser(ctx: any, a: number, b: number, st: any, issues: string) {
   const H = ctx.sides.home.name, A = ctx.sides.away.name;
-  const sp = (s: string) => (ctx.lineup[s].speech || '').trim() ? `«${ctx.lineup[s].speech.trim()}»` : '(тренер промолчал — пустая речь, тоже сигнал команде)';
-  const tr = (s: string) => (ctx.lineup[s].training || '').trim() ? `«${ctx.lineup[s].training.trim()}»` : '(тренировочный план не указан — отдельной подготовки к матчу не было)';
+  const sp = (s: string) => (ctx.lineup[s].speech || '').trim() ? `«${ctx.lineup[s].speech.trim()}»` : '(тренер промолчал перед выходом — команда действует по стандартному плану)';
+  const tr = (s: string) => (ctx.lineup[s].training || '').trim() ? `«${ctx.lineup[s].training.trim()}»` : '(тренировочный микроцикл: общекомандная подготовка, отработка тактических связок и стандартов)';
   const cInfo = (s: string) => {
     const c = ctx.coaches[s];
-    return `${c.coach.name} (философия: ${c.coach.styleTitle}). Тактическая совместимость: ${c.synergy.statusTitle} (${c.synergy.score}%). ${c.synergy.description}`;
+    const staffNote = ctx.staff?.[s] && ctx.staff[s] !== 'нет данных о расширенном штабе' ? ` Тренерский штаб: ${ctx.staff[s]}.` : '';
+    return `${c.coach.name} (${c.coach.nationality || 'Россия'}, ${c.coach.age || 45} лет, философия: ${c.coach.styleTitle || c.coach.style}). Характер на бровке: ${c.coach.temperament || 'уравновешенный'}. Любимая схема: ${c.coach.favoriteFormation || '4-3-3'}. Цитата: ${c.coach.quote || '«Играть на победу»'}. Тактическая синергия: ${c.synergy.statusTitle} (${c.synergy.score}%). ${c.synergy.description}.${staffNote}`;
   };
-  let u = `ПЕРИОД: минуты ${a}–${b}\n`;
-  if (st) u += `СОСТОЯНИЕ МАТЧА НА МОМЕНТ НАЧАЛА ПЕРИОДА: счёт ${st.score[0]}:${st.score[1]}; жёлтые: ${H}: ${st.yellows.home.join(', ') || 'нет'}, ${A}: ${st.yellows.away.join(', ') || 'нет'}; удалены: ${st.reds.join(', ') || 'нет'}; покинули поле (травма/замена): ${st.off.join(', ') || 'нет'}; замены: ${H} ${st.subs.home}/5, ${A} ${st.subs.away}/5. Заменившие вышли на поле: ${st.ins.join(', ') || 'нет'}.${st.note ? ` Заметка о ходе игры: ${st.note}` : ''}\nПоследние события: ${st.last.join(' | ') || '—'}\n`;
-  u += `\nМАТЧ: ${H} — ${A} | ${ctx.comp}, ${ctx.roundLabel} | ${ctx.date} ${ctx.time} | Стадион: ${ctx.stadium}\n`;
-  u += `\nКОНТЕКСТ ОБЕИХ КОМАНД (учитывай обе стороны):\n- ${ctx.motiv.home}\n- ${ctx.motiv.away}\n- ПРОТИВОСТОЯНИЕ: ${ctx.derby}\n- Гонка бомбардиров РПЛ: ${ctx.race}\n`;
-  u += `\nПОГОДА И ПОЛЕ: ${ctx.weather}\n`;
-  u += `\nРАСПИСАНИЕ И УСТАЛОСТЬ:\n- ${H}: ${ctx.fat.home}\n- ${A}: ${ctx.fat.away}\n`;
-  u += `\nГЛАВНЫЕ ТРЕНЕРЫ И ТАКТИЧЕСКАЯ СИНЕРГИЯ:\n- ${H}: ${cInfo('home')}\n- ${A}: ${cInfo('away')}\n`;
-  u += `\nТРЕНИРОВОЧНЫЙ ПЛАН (текст тренера, как есть):\n- ${H}: ${tr('home')}\n- ${A}: ${tr('away')}\n`;
-  u += `\nТАКТИКА / РЕЧЬ ТРЕНЕРА ПЕРЕД МАТЧЕМ (как есть):\n- ${H}, схема ${ctx.lineup.home.formation}: ${sp('home')}\n- ${A}, схема ${ctx.lineup.away.formation}: ${sp('away')}\n`;
-  u += `\n${lineText(ctx, 'home')}\n\n${lineText(ctx, 'away')}\n`;
-  if (issues) u += `\nВНИМАНИЕ: прошлая попытка отклонена из-за проблем: ${issues}. Исправь их.\n`;
-  u += `\nСыграй период (минуты ${a}–${b}). Верни только JSON по формату из инструкции.`;
+
+  const refInfo = () => {
+    const rc = ctx.refereeCrew;
+    if (!rc || !rc.head) return 'Судейская бригада: назначение на матч стандартное.';
+    const h = rc.head;
+    let s = `Главный судья: ${h.name} (${h.city || 'РФ'}, рейтинг ${h.rating || 7.5}/10, стиль: ${h.style || 'сбалансированный'}).\n  Манера судейства: ${h.styleDesc || h.bio || 'держит игру под контролем'}. Статистика: ${h.matches || 0} матчей, ${h.yellows || 0} ЖК, ${h.reds || 0} КК, ${h.penalties || 0} пенальти.`;
+    s += `\n  Помощники на линиях: 1-й ассистент — ${rc.asst1}, 2-й ассистент — ${rc.asst2}.`;
+    s += `\n  Резервный арбитр: ${rc.fourth}.`;
+    if (rc.var) {
+      s += `\n  Видеоассистенты (VAR): Главный ВАР — ${rc.var}${rc.varProfile ? ` (${rc.varProfile.styleDesc || 'опытный видеосудья'})` : ''}, АВАР — ${rc.avar || 'ассистент ВАР'}.`;
+    }
+    return s;
+  };
+
+  let u = `═══ МАТЧ: ${H} — ${A} | ${ctx.comp}, ${ctx.roundLabel} | ${ctx.date} ${ctx.time} | Стадион: ${ctx.stadium} ═══\n`;
+  u += `ОТРЕЗОК ИГРЫ: минуты ${a}–${b}\n\n`;
+
+  if (st) {
+    u += `ТЕКУЩЕЕ СОСТОЯНИЕ МАТЧА (к минуте ${a}):\n`;
+    u += `- Счёт: ${H} ${st.score[0]}:${st.score[1]} ${A}\n`;
+    u += `- Предупреждения (ЖК): ${H}: ${st.yellows.home.join(', ') || 'нет'} | ${A}: ${st.yellows.away.join(', ') || 'нет'}\n`;
+    u += `- Удаления (КК): ${st.reds.join(', ') || 'нет'}\n`;
+    u += `- Покинули поле (травма/замена): ${st.off.join(', ') || 'нет'}\n`;
+    u += `- Использовано замен: ${H} ${st.subs.home}/5, ${A} ${st.subs.away}/5 (вышли: ${st.ins.join(', ') || 'нет'})\n`;
+    if (st.note) u += `- Ход игры и моментум: ${st.note}\n`;
+    u += `- Хроника последних минут: ${st.last.join(' | ') || 'начало встречи'}\n\n`;
+  }
+
+  u += `1. ТУРНИРНАЯ ТАБЛИЦА И ТУРНИРНОЕ ЗНАЧЕНИЕ:\n`;
+  u += `- Положение ${H}: ${ctx.tableStandings.home}\n`;
+  u += `- Положение ${A}: ${ctx.tableStandings.away}\n`;
+  u += `- Мотивация ${H}: ${ctx.motiv.home}\n`;
+  u += `- Мотивация ${A}: ${ctx.motiv.away}\n`;
+  u += `- СТАТУС ДЕРБИ / ПРИНЦИПИАЛЬНОСТЬ: ${ctx.derby}\n`;
+  u += `- Гонка бомбардиров чемпионата: ${ctx.race}\n\n`;
+
+  u += `2. СТАТИСТИКА КОМАНД В ТУРНИРЕ:\n`;
+  u += `- ${H}: ${ctx.teamStats.home}\n`;
+  u += `- ${A}: ${ctx.teamStats.away}\n\n`;
+
+  u += `3. СУДЕЙСКАЯ БРИГАДА И VAR:\n${refInfo()}\n\n`;
+
+  u += `4. ПОГОДА, ГАЗОН И ФИЗИЧЕСКИЙ ГРАФИК:\n`;
+  u += `- Погода и газон: ${ctx.weather}\n`;
+  u += `- Физическое состояние и график ${H}: ${ctx.fat.home}\n`;
+  u += `- Физическое состояние и график ${A}: ${ctx.fat.away}\n\n`;
+
+  u += `5. ГЛАВНЫЕ ТРЕНЕРЫ И ШТАБ:\n`;
+  u += `- ${H}: ${cInfo('home')}\n`;
+  u += `- ${A}: ${cInfo('away')}\n\n`;
+
+  u += `6. ТРЕНИРОВОЧНЫЙ ПРОЦЕСС И ПРЕДМАТЧЕВЫЙ ПЛАН:\n`;
+  u += `- Недельный цикл ${H}: ${tr('home')}\n`;
+  u += `- Недельный цикл ${A}: ${tr('away')}\n\n`;
+
+  u += `7. ТАКТИЧЕСКИЕ СХЕМЫ И УСТАНОВКА НА ИГРУ:\n`;
+  u += `- ${H} (схема ${ctx.lineup.home.formation}): ${sp('home')}\n`;
+  u += `- ${A} (схема ${ctx.lineup.away.formation}): ${sp('away')}\n\n`;
+
+  u += `8. СОСТАВЫ И ПРОФИЛИ ИГРОКОВ (используй исключительно этих игроков):\n`;
+  u += `${lineText(ctx, 'home')}\n\n${lineText(ctx, 'away')}\n`;
+
+  if (issues) {
+    u += `\nВНИМАНИЕ! Прошлая попытка генерации была отклонена: ${issues}. Строго устрани указанные замечания!\n`;
+  }
+
+  u += `\nСгенерируй отрезок матча (минуты ${a}–${b}) строго в валидном JSON без markdown-обёртки по правилам 10 разделов симулятора.`;
   return u;
 }
 
 /* ───────── обработка событий ───────── */
-const TYPES = new Set('kickoff possession pass dribble tackle duel foul yellow red shot save miss post goal own_goal penalty offside corner freekick injury sub var ref_error incident highlight halftime fulltime'.split(' '));
+const TYPES = new Set('kickoff possession pass dribble tackle duel foul yellow red shot save miss post goal own_goal penalty offside corner freekick injury sub var ref_error incident cooling_break highlight halftime fulltime'.split(' '));
 function indexNames(ctx: any) {
   return Object.entries<string>(ctx.names).map(([pid, n]) => ({ pid, side: ctx.pidSide[pid], full: norm(n), last: norm(n).split(' ').pop() }));
 }
@@ -1958,7 +2081,7 @@ function deriveState(events: any[], ctx: any, note?: string) {
     if (e.type === 'yellow' && nm(0)) st.yellows[e.team]?.push(nm(0));
     if (e.type === 'red' && nm(0)) { st.reds.push(nm(0)); st.off.push(nm(0)); }
     if (e.type === 'sub') { st.subs[e.team]++; if (nm(1)) st.off.push(nm(1)); if (nm(0)) st.ins.push(nm(0)); }
-    if (e.type === 'injury' && nm(0)) st.off.push(nm(0));
+    if (e.type === 'injury' && nm(0) && (e.out_days === undefined || e.out_days > 0)) st.off.push(nm(0));
   }
   return st;
 }
@@ -1984,18 +2107,19 @@ function normalizeEvents(raw: any[], a: number, b: number, ctx: any, prev: any[]
     if (!team) team = pids[0] ? ctx.pidSide[pids[0]] : 'none';
     if (type === 'own_goal' && !['home', 'away'].includes(team)) { probs.push('автогол без команды'); continue; }
     const actor = (type === 'sub' || type === 'save') ? null : pids[0];
-    if (actor && off.has(norm(ctx.names[actor])) && !['yellow', 'red', 'injury', 'foul'].includes(type) && !['var', 'incident', 'highlight'].includes(type)) {
+    if (actor && off.has(norm(ctx.names[actor])) && !['yellow', 'red', 'injury', 'foul'].includes(type) && !['var', 'incident', 'cooling_break', 'highlight'].includes(type)) {
       probs.push(`${ctx.names[actor]} действует после ухода с поля`);
     }
+    const outDays = type === 'injury' ? (e.out_days !== undefined ? (isNaN(+e.out_days) ? 14 : clamp(Math.round(+e.out_days), 0, 240)) : 14) : undefined;
     if (type === 'red' && pids[0]) off.add(norm(ctx.names[pids[0]]));
-    if (type === 'injury' && pids[0]) off.add(norm(ctx.names[pids[0]]));
+    if (type === 'injury' && pids[0] && (outDays === undefined || outDays > 0)) off.add(norm(ctx.names[pids[0]]));
     if (type === 'sub') {
       if (['home', 'away'].includes(team)) { if (++subs[team] > 5) probs.push('больше 5 замен'); }
       if (pids[1]) off.add(norm(ctx.names[pids[1]]));
     }
     const ev: any = { min, sec, team, type, players: names, pids, text: String(e.text || '').slice(0, 500) };
     if (type === 'shot' || type === 'penalty') ev.xg = clamp(+e.xg || (type === 'penalty' ? 0.76 : 0.08), 0.01, 0.95);
-    if (type === 'injury') ev.out_days = clamp(Math.round(+e.out_days) || 14, 1, 240);
+    if (type === 'injury') ev.out_days = outDays;
     out.push(ev);
   }
   {
@@ -2268,7 +2392,7 @@ function finish(id: string) {
   for (const e of m.events) {
     const p = player(e.pids?.[0]);
     if (!p) continue;
-    if (e.type === 'injury') p.out = { until: addDays(f.date, e.out_days || 14), reason: e.text.slice(0, 120) };
+    if (e.type === 'injury' && (e.out_days === undefined || e.out_days > 0)) p.out = { until: addDays(f.date, e.out_days || 14), reason: e.text.slice(0, 120) };
     if (e.type === 'red') p.banLeft = 1;
     if (e.type === 'yellow') {
       p.seasonYC = (p.seasonYC || 0) + 1;

@@ -265,4 +265,28 @@ test('Referee assignment regulations: RPL & Cup only, 1 match per tour for head 
   }
 });
 
+test('Match simulation: prompt.txt has authentic 10-section structure and context requirements', () => {
+  const prompt = fs.readFileSync('prompt.txt', 'utf8');
+
+  // Verify all 10 sections are explicitly present
+  assert.ok(prompt.includes('═══ 1. ГЛАВНЫЙ ПРИНЦИП И ИСТИННАЯ ФИЗИКА ═══'), 'Section 1 missing');
+  assert.ok(prompt.includes('═══ 2. ХРОНОЛОГИЯ, МИКРО-ЦЕПОЧКИ И ДИНАМИКА ЭПИЗОДОВ ═══'), 'Section 2 missing');
+  assert.ok(prompt.includes('═══ 3. СУДЕЙСТВО, ПСИХОЛОГИЯ И ПОВЕДЕНИЕ АРБИТРОВ ═══'), 'Section 3 missing');
+  assert.ok(prompt.includes('═══ 4. ПРОТОКОЛ VAR И СУДЕЙСКИЕ РЕШЕНИЯ ═══'), 'Section 4 missing');
+  assert.ok(prompt.includes('═══ 5. ПОГОДА, ГАЗОН И ДЕГРАДАЦИЯ ПОКРЫТИЯ ═══'), 'Section 5 missing');
+  assert.ok(prompt.includes('═══ 6. ЗАМЕНЫ, ОКНА И ТАКТИЧЕСКИЕ ПЕРЕСТРОЕНИЯ ═══'), 'Section 6 missing');
+  assert.ok(prompt.includes('═══ 7. ТРАВМЫ, МЕДИЦИНСКАЯ ПОМОЩЬ И out_days ═══'), 'Section 7 missing');
+  assert.ok(prompt.includes('═══ 8. АТМОСФЕРА, ЭКИПИРОВКА И ФУТБОЛЬНЫЕ ИНЦИДЕНТЫ ═══'), 'Section 8 missing');
+  assert.ok(prompt.includes('═══ 9. УЧЁТ ВСЕХ ДАННЫХ САЙТА И КОНТЕКСТА ═══'), 'Section 9 missing');
+  assert.ok(prompt.includes('═══ 10. СТРОГИЙ ФОРМАТ ВЫХОДНЫХ ДАННЫХ (JSON) ═══'), 'Section 10 missing');
+
+  // Verify key domain concepts
+  assert.ok(prompt.includes('cooling_break'));
+  assert.ok(prompt.includes('out_days'));
+  assert.ok(prompt.includes('VAR'));
+  assert.ok(prompt.includes('state_at_end'));
+  assert.ok(prompt.includes('momentum_note'));
+});
+
+
 

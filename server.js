@@ -4385,12 +4385,34 @@ function fatText(tid, f) {
   }
   return s;
 }
+function teamStatsSummary(tid, comp) {
+  const allP = Object.values(agg().P).filter((x) => x.t === tid && x.comp === comp);
+  const topG = allP.filter((x) => x.g > 0).sort((a, b) => b.g - a.g).slice(0, 3).map((x) => `${x.n} (${x.g} \u0433\u043E\u043B.)`);
+  const topA = allP.filter((x) => x.a > 0).sort((a, b) => b.a - a.a).slice(0, 3).map((x) => `${x.n} (${x.a} \u043F\u0430\u0441.)`);
+  const cards = allP.filter((x) => (x.yc || 0) + (x.rc || 0) * 2 > 0).sort((a, b) => b.yc + b.rc * 2 - (a.yc + a.rc * 2)).slice(0, 3).map((x) => `${x.n} (${x.yc} \u0416\u041A${x.rc ? `, ${x.rc} \u041A\u041A` : ""})`);
+  const tStats = Object.values(agg().T).find((x) => x.tid === tid && x.comp === comp);
+  let res = "";
+  if (topG.length) res += `\u0411\u043E\u043C\u0431\u0430\u0440\u0434\u0438\u0440\u044B: ${topG.join(", ")}. `;
+  if (topA.length) res += `\u0410\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442\u044B: ${topA.join(", ")}. `;
+  if (cards.length) res += `\u0414\u0438\u0441\u0446\u0438\u043F\u043B\u0438\u043D\u0430 (\u0440\u0438\u0441\u043A \u043D\u0430\u0440\u0443\u0448\u0435\u043D\u0438\u0439): ${cards.join(", ")}. `;
+  if (tStats) res += `\u041A\u043E\u043C\u0430\u043D\u0434\u043D\u044B\u0435 \u043F\u043E\u043A\u0430\u0437\u0430\u0442\u0435\u043B\u0438 (${tStats.m} \u0438\u0433\u0440): \u0437\u0430\u0431\u0438\u0442\u043E ${tStats.g || 0}, xG ${+(tStats.xg || 0).toFixed(1)}, \u0444\u043E\u043B\u044B ${tStats.fo || 0}, \u0416\u041A ${tStats.yc || 0}${tStats.rc ? `, \u041A\u041A ${tStats.rc}` : ""}.`;
+  return res.trim() || "\u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0441\u0435\u0437\u043E\u043D\u0430 \u043D\u0430\u043A\u0430\u043F\u043B\u0438\u0432\u0430\u0435\u0442\u0441\u044F (\u043F\u0435\u0440\u0432\u044B\u0435 \u0442\u0443\u0440\u044B \u0447\u0435\u043C\u043F\u0438\u043E\u043D\u0430\u0442\u0430).";
+}
+function staffSummary(tid) {
+  const staff = getStaffForTeam(tid);
+  if (!staff.length) return "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445 \u043E \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u043C \u0448\u0442\u0430\u0431\u0435";
+  return staff.slice(0, 4).map((s) => `${s.roleTitle || s.role}: ${s.name}`).join("; ");
+}
 function cardLine(p, date) {
+  if (!p) return "\u0418\u0433\u0440\u043E\u043A (\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445)";
   const a = age(p, date), ag = agg().P;
   let seas = "";
   const row = Object.values(ag).filter((x) => x.pid === p.id && x.comp === "rpl")[0];
-  if (row) seas = ` \u0412 \u044D\u0442\u043E\u043C \u0441\u0435\u0437\u043E\u043D\u0435 \u0432 \u0438\u0433\u0440\u0435: ${row.m} \u043C\u0430\u0442\u0447\u0435\u0439, ${row.g} \u0433\u043E\u043B., ${row.a} \u043F\u0430\u0441.`;
-  return `${p.pos} ${p.name}${a ? `, ${a} \u043B\u0435\u0442` : ""} \u2014 \u0441\u0442\u0438\u043B\u044C: ${p.style || "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445"}. \u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F: ${(p.achievements || []).join("; ") || "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445"}. \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 2 \u0441\u0435\u0437\u043E\u043D\u043E\u0432: ${p.stats2y || "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445"}. \u0424\u043E\u0440\u043C\u0430: ${p.form || "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445"}.${seas} \u0425\u0430\u0440\u0430\u043A\u0442\u0435\u0440: ${p.character || "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445"}. \u041D\u043E\u0432\u043E\u0441\u0442\u0438: ${p.news || "\u043D\u0435\u0442"}.`;
+  if (row) seas = ` \u0412 \u0441\u0435\u0437\u043E\u043D\u0435: ${row.m} \u0438\u0433\u0440, ${row.g} \u0433\u043E\u043B., ${row.a} \u043F\u0430\u0441., ${row.yc || 0} \u0416\u041A${row.rc ? `, ${row.rc} \u041A\u041A` : ""}${row.cs ? `, ${row.cs} \u0441\u0443\u0445\u0438\u0445 \u043C\u0430\u0442\u0447\u0435\u0439` : ""}.`;
+  const foot = p.foot ? `, \u0440\u0430\u0431\u043E\u0447\u0430\u044F \u043D\u043E\u0433\u0430: ${p.foot}` : "";
+  const nat = p.nation ? `, \u0433\u0440\u0430\u0436\u0434\u0430\u043D\u0441\u0442\u0432\u043E: ${p.nation}` : p.nat ? `, \u0441\u0442\u0440\u0430\u043D\u0430: ${p.nat}` : "";
+  const real = p.realClub ? `, \u0440\u0435\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043B\u0443\u0431: ${p.realClub}` : "";
+  return `${p.pos || "\u041F\u0417"} ${p.name}${a ? `, ${a} \u043B\u0435\u0442` : ""}${nat}${foot}${real} \u2014 \u0441\u0442\u0438\u043B\u044C: ${p.style || "\u0441\u0431\u0430\u043B\u0430\u043D\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439"}. \u0414\u043E\u0441\u0442\u0438\u0436\u0435\u043D\u0438\u044F: ${(p.achievements || []).join("; ") || "\u043E\u043F\u044B\u0442 \u0432\u044B\u0441\u0442\u0443\u043F\u043B\u0435\u043D\u0438\u0439"}. \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 2 \u0441\u0435\u0437\u043E\u043D\u043E\u0432: ${p.stats2y || "\u0440\u0435\u0433\u0443\u043B\u044F\u0440\u043D\u0430\u044F \u0438\u0433\u0440\u043E\u0432\u0430\u044F \u043F\u0440\u0430\u043A\u0442\u0438\u043A\u0430"}. \u0424\u043E\u0440\u043C\u0430: ${p.form || "\u0441\u0442\u0430\u0431\u0438\u043B\u044C\u043D\u0430\u044F"}.${seas} \u0425\u0430\u0440\u0430\u043A\u0442\u0435\u0440: ${p.character || "\u0445\u043B\u0430\u0434\u043D\u043E\u043A\u0440\u043E\u0432\u043D\u044B\u0439, \u043A\u043E\u043C\u0430\u043D\u0434\u043D\u044B\u0439 \u0438\u0433\u0440\u043E\u043A"}. \u041D\u043E\u0432\u043E\u0441\u0442\u0438: ${p.news || "\u0433\u043E\u0442\u043E\u0432\u0438\u0442\u0441\u044F \u043A \u043C\u0430\u0442\u0447\u0443 \u0432 \u0448\u0442\u0430\u0442\u043D\u043E\u043C \u0440\u0435\u0436\u0438\u043C\u0435"}.`;
 }
 async function buildCtx(f) {
   const ctx = { fid: f.id, comp: compName(f), roundLabel: roundLabel(f), date: f.date, time: f.time, names: {}, pidSide: {}, pidTeam: {}, pos: {}, lineup: {}, sides: {} };
@@ -4414,7 +4436,7 @@ async function buildCtx(f) {
     }
   }
   const dv = db.derbies.find((d) => d.a === f.home && d.b === f.away || d.a === f.away && d.b === f.home);
-  ctx.derby = dv ? `${dv.name}. ${dv.note}` : "\u043D\u0435\u0442";
+  ctx.derby = dv ? `${dv.name}. ${dv.note}` : "\u043D\u0435\u0442 (\u043E\u0431\u044B\u0447\u043D\u044B\u0439 \u043A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u043D\u044B\u0439 \u043C\u0430\u0442\u0447)";
   ctx.motiv = { home: motivText(f.home, f), away: motivText(f.away, f) };
   const top = Object.values(agg().P).filter((x) => x.comp === "rpl" && x.g > 0).sort((a, b) => b.g - a.g).slice(0, 5);
   ctx.race = top.length ? top.map((x) => `${x.n} (${tn(x.t)}) \u2014 ${x.g}`).join("; ") : "\u043F\u043E\u043A\u0430 \u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445";
@@ -4424,79 +4446,188 @@ async function buildCtx(f) {
   ctx.missing = { home: miss("home"), away: miss("away") };
   const cH = getCoachForTeam(f.home), cA = getCoachForTeam(f.away);
   ctx.coaches = {
-    home: { coach: cH, synergy: computeCoachSynergy(cH, ctx.lineup.home) },
-    away: { coach: cA, synergy: computeCoachSynergy(cA, ctx.lineup.away) }
+    home: { coach: cH, synergy: computeCoachSynergy(cH, ctx.lineup.home), staff: getStaffForTeam(f.home) },
+    away: { coach: cA, synergy: computeCoachSynergy(cA, ctx.lineup.away), staff: getStaffForTeam(f.away) }
+  };
+  ctx.teamStats = {
+    home: teamStatsSummary(f.home, f.comp),
+    away: teamStatsSummary(f.away, f.comp)
+  };
+  ctx.staff = {
+    home: staffSummary(f.home),
+    away: staffSummary(f.away)
+  };
+  const comp = f.comp;
+  const rows = table(comp, f.date);
+  const rH = rows.find((x) => x.id === f.home);
+  const rA = rows.find((x) => x.id === f.away);
+  ctx.tableStandings = {
+    home: rH ? `${rH.pos}-\u0435 \u043C\u0435\u0441\u0442\u043E (${rH.pts} \u043E\u0447\u043A., ${rH.p} \u0438\u0433\u0440, ${rH.w}\u0412 ${rH.d}\u041D ${rH.l}\u041F, \u043C\u044F\u0447\u0438 ${rH.gf}-${rH.ga}, \u0440\u0430\u0437\u043D\u0438\u0446\u0430 ${rH.gd >= 0 ? "+" + rH.gd : rH.gd}, \u0444\u043E\u0440\u043C\u0430: ${rH.form || "\u2014"}, \u0437\u043E\u043D\u0430: ${rH.zoneLabel || "\u0441\u0435\u0440\u0435\u0434\u0438\u043D\u0430 \u0442\u0430\u0431\u043B\u0438\u0446\u044B"})` : "\u043D\u0430\u0447\u0430\u043B\u043E \u0442\u0443\u0440\u043D\u0438\u0440\u0430",
+    away: rA ? `${rA.pos}-\u0435 \u043C\u0435\u0441\u0442\u043E (${rA.pts} \u043E\u0447\u043A., ${rA.p} \u0438\u0433\u0440, ${rA.w}\u0412 ${rA.d}\u041D ${rA.l}\u041F, \u043C\u044F\u0447\u0438 ${rA.gf}-${rA.ga}, \u0440\u0430\u0437\u043D\u0438\u0446\u0430 ${rA.gd >= 0 ? "+" + rA.gd : rA.gd}, \u0444\u043E\u0440\u043C\u0430: ${rA.form || "\u2014"}, \u0437\u043E\u043D\u0430: ${rA.zoneLabel || "\u0441\u0435\u0440\u0435\u0434\u0438\u043D\u0430 \u0442\u0430\u0431\u043B\u0438\u0446\u044B"})` : "\u043D\u0430\u0447\u0430\u043B\u043E \u0442\u0443\u0440\u043D\u0438\u0440\u0430"
+  };
+  if (!f.refereeName && (f.comp === "rpl" || f.comp === "cup")) {
+    assignReferee(f);
+  }
+  const headRef = db.referees?.find((r) => r.id === f.refereeId || r.name === f.refereeName) || (f.refereeName ? {
+    name: f.refereeName,
+    city: "\u0420\u043E\u0441\u0441\u0438\u044F",
+    style: "balanced",
+    styleDesc: "\u041F\u043E\u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u0430\u0440\u0431\u0438\u0442\u0440, \u0434\u0435\u0440\u0436\u0438\u0442 \u0434\u0438\u0441\u0446\u0438\u043F\u043B\u0438\u043D\u0443",
+    rating: 7.5,
+    bio: `\u0413\u043B\u0430\u0432\u043D\u044B\u0439 \u0430\u0440\u0431\u0438\u0442\u0440 \u0432\u0441\u0442\u0440\u0435\u0447\u0438 \u2014 ${f.refereeName}`,
+    matches: 0,
+    yellows: 0,
+    reds: 0,
+    penalties: 0
+  } : null);
+  const varRef = db.referees?.find((r) => r.name === f.varReferee) || (f.varReferee ? {
+    name: f.varReferee,
+    style: "\u0412\u0410\u0420-\u0430\u0440\u0431\u0438\u0442\u0440",
+    styleDesc: "\u041E\u043F\u044B\u0442\u043D\u044B\u0439 \u0432\u0438\u0434\u0435\u043E\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442 VAR",
+    bio: `\u0410\u0440\u0431\u0438\u0442\u0440 VAR \u2014 ${f.varReferee}`
+  } : null);
+  const assts = Array.isArray(f.assistants) && f.assistants.length >= 2 ? f.assistants : ["\u0414\u043C\u0438\u0442\u0440\u0438\u0439 \u041C\u043E\u0441\u044F\u043A\u0438\u043D", "\u0412\u0430\u043B\u0435\u043D\u0442\u0438\u043D \u041C\u0443\u0440\u0430\u0448\u043E\u0432"];
+  ctx.refereeCrew = {
+    head: headRef,
+    asst1: assts[0],
+    asst2: assts[1],
+    fourth: f.reserveReferee || "\u0412\u0435\u0440\u0430 \u041E\u043F\u0435\u0439\u043A\u0438\u043D\u0430",
+    var: f.varReferee || (f.comp === "rpl" ? "\u0421\u0435\u0440\u0433\u0435\u0439 \u041A\u0430\u0440\u0430\u0441\u0435\u0432" : null),
+    varProfile: varRef,
+    avar: f.avarReferee || (f.comp === "rpl" ? "\u041F\u0430\u0432\u0435\u043B \u041A\u0443\u043A\u0443\u044F\u043D" : null)
   };
   return ctx;
 }
 function lineText(ctx, s) {
   const L = ctx.lineup[s], f = ctx.date, sd = ctx.sides[s];
   const row = (pid) => cardLine(player(pid), f);
-  return `\u0421\u041E\u0421\u0422\u0410\u0412 ${sd.name} (\u0441\u0445\u0435\u043C\u0430 ${L.formation}), \u0441\u0442\u0430\u0440\u0442\u043E\u0432\u044B\u0435:
+  return `\u0421\u041E\u0421\u0422\u0410\u0412 ${sd.name} (\u0441\u0445\u0435\u043C\u0430 ${L.formation}), \u0441\u0442\u0430\u0440\u0442\u043E\u0432\u044B\u0435 11:
 ${L.starters.map((p) => "- " + row(p)).join("\n")}
-\u0421\u043A\u0430\u043C\u0435\u0439\u043A\u0430:
+\u0421\u043A\u0430\u043C\u0435\u0439\u043A\u0430 \u0437\u0430\u043F\u0430\u0441\u043D\u044B\u0445:
 ${L.bench.map((p) => "- " + row(p)).join("\n")}
-\u041D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B: ${ctx.missing[s].join(", ") || "\u043D\u0435\u0442"}`;
+\u041D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B (\u0442\u0440\u0430\u0432\u043C\u044B/\u0434\u0438\u0441\u043A\u0432\u0430\u043B\u0438\u0444\u0438\u043A\u0430\u0446\u0438\u0438): ${ctx.missing[s].join(", ") || "\u043D\u0435\u0442"}`;
 }
 function buildUser(ctx, a, b, st, issues) {
   const H = ctx.sides.home.name, A = ctx.sides.away.name;
-  const sp = (s) => (ctx.lineup[s].speech || "").trim() ? `\xAB${ctx.lineup[s].speech.trim()}\xBB` : "(\u0442\u0440\u0435\u043D\u0435\u0440 \u043F\u0440\u043E\u043C\u043E\u043B\u0447\u0430\u043B \u2014 \u043F\u0443\u0441\u0442\u0430\u044F \u0440\u0435\u0447\u044C, \u0442\u043E\u0436\u0435 \u0441\u0438\u0433\u043D\u0430\u043B \u043A\u043E\u043C\u0430\u043D\u0434\u0435)";
-  const tr = (s) => (ctx.lineup[s].training || "").trim() ? `\xAB${ctx.lineup[s].training.trim()}\xBB` : "(\u0442\u0440\u0435\u043D\u0438\u0440\u043E\u0432\u043E\u0447\u043D\u044B\u0439 \u043F\u043B\u0430\u043D \u043D\u0435 \u0443\u043A\u0430\u0437\u0430\u043D \u2014 \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0439 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0438 \u043A \u043C\u0430\u0442\u0447\u0443 \u043D\u0435 \u0431\u044B\u043B\u043E)";
+  const sp = (s) => (ctx.lineup[s].speech || "").trim() ? `\xAB${ctx.lineup[s].speech.trim()}\xBB` : "(\u0442\u0440\u0435\u043D\u0435\u0440 \u043F\u0440\u043E\u043C\u043E\u043B\u0447\u0430\u043B \u043F\u0435\u0440\u0435\u0434 \u0432\u044B\u0445\u043E\u0434\u043E\u043C \u2014 \u043A\u043E\u043C\u0430\u043D\u0434\u0430 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u043F\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E\u043C\u0443 \u043F\u043B\u0430\u043D\u0443)";
+  const tr = (s) => (ctx.lineup[s].training || "").trim() ? `\xAB${ctx.lineup[s].training.trim()}\xBB` : "(\u0442\u0440\u0435\u043D\u0438\u0440\u043E\u0432\u043E\u0447\u043D\u044B\u0439 \u043C\u0438\u043A\u0440\u043E\u0446\u0438\u043A\u043B: \u043E\u0431\u0449\u0435\u043A\u043E\u043C\u0430\u043D\u0434\u043D\u0430\u044F \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0430, \u043E\u0442\u0440\u0430\u0431\u043E\u0442\u043A\u0430 \u0442\u0430\u043A\u0442\u0438\u0447\u0435\u0441\u043A\u0438\u0445 \u0441\u0432\u044F\u0437\u043E\u043A \u0438 \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043E\u0432)";
   const cInfo = (s) => {
     const c = ctx.coaches[s];
-    return `${c.coach.name} (\u0444\u0438\u043B\u043E\u0441\u043E\u0444\u0438\u044F: ${c.coach.styleTitle}). \u0422\u0430\u043A\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u043E\u0441\u0442\u044C: ${c.synergy.statusTitle} (${c.synergy.score}%). ${c.synergy.description}`;
+    const staffNote = ctx.staff?.[s] && ctx.staff[s] !== "\u043D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445 \u043E \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u043D\u043E\u043C \u0448\u0442\u0430\u0431\u0435" ? ` \u0422\u0440\u0435\u043D\u0435\u0440\u0441\u043A\u0438\u0439 \u0448\u0442\u0430\u0431: ${ctx.staff[s]}.` : "";
+    return `${c.coach.name} (${c.coach.nationality || "\u0420\u043E\u0441\u0441\u0438\u044F"}, ${c.coach.age || 45} \u043B\u0435\u0442, \u0444\u0438\u043B\u043E\u0441\u043E\u0444\u0438\u044F: ${c.coach.styleTitle || c.coach.style}). \u0425\u0430\u0440\u0430\u043A\u0442\u0435\u0440 \u043D\u0430 \u0431\u0440\u043E\u0432\u043A\u0435: ${c.coach.temperament || "\u0443\u0440\u0430\u0432\u043D\u043E\u0432\u0435\u0448\u0435\u043D\u043D\u044B\u0439"}. \u041B\u044E\u0431\u0438\u043C\u0430\u044F \u0441\u0445\u0435\u043C\u0430: ${c.coach.favoriteFormation || "4-3-3"}. \u0426\u0438\u0442\u0430\u0442\u0430: ${c.coach.quote || "\xAB\u0418\u0433\u0440\u0430\u0442\u044C \u043D\u0430 \u043F\u043E\u0431\u0435\u0434\u0443\xBB"}. \u0422\u0430\u043A\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0441\u0438\u043D\u0435\u0440\u0433\u0438\u044F: ${c.synergy.statusTitle} (${c.synergy.score}%). ${c.synergy.description}.${staffNote}`;
   };
-  let u = `\u041F\u0415\u0420\u0418\u041E\u0414: \u043C\u0438\u043D\u0443\u0442\u044B ${a}\u2013${b}
+  const refInfo = () => {
+    const rc = ctx.refereeCrew;
+    if (!rc || !rc.head) return "\u0421\u0443\u0434\u0435\u0439\u0441\u043A\u0430\u044F \u0431\u0440\u0438\u0433\u0430\u0434\u0430: \u043D\u0430\u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0435 \u043D\u0430 \u043C\u0430\u0442\u0447 \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E\u0435.";
+    const h = rc.head;
+    let s = `\u0413\u043B\u0430\u0432\u043D\u044B\u0439 \u0441\u0443\u0434\u044C\u044F: ${h.name} (${h.city || "\u0420\u0424"}, \u0440\u0435\u0439\u0442\u0438\u043D\u0433 ${h.rating || 7.5}/10, \u0441\u0442\u0438\u043B\u044C: ${h.style || "\u0441\u0431\u0430\u043B\u0430\u043D\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439"}).
+  \u041C\u0430\u043D\u0435\u0440\u0430 \u0441\u0443\u0434\u0435\u0439\u0441\u0442\u0432\u0430: ${h.styleDesc || h.bio || "\u0434\u0435\u0440\u0436\u0438\u0442 \u0438\u0433\u0440\u0443 \u043F\u043E\u0434 \u043A\u043E\u043D\u0442\u0440\u043E\u043B\u0435\u043C"}. \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430: ${h.matches || 0} \u043C\u0430\u0442\u0447\u0435\u0439, ${h.yellows || 0} \u0416\u041A, ${h.reds || 0} \u041A\u041A, ${h.penalties || 0} \u043F\u0435\u043D\u0430\u043B\u044C\u0442\u0438.`;
+    s += `
+  \u041F\u043E\u043C\u043E\u0449\u043D\u0438\u043A\u0438 \u043D\u0430 \u043B\u0438\u043D\u0438\u044F\u0445: 1-\u0439 \u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442 \u2014 ${rc.asst1}, 2-\u0439 \u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442 \u2014 ${rc.asst2}.`;
+    s += `
+  \u0420\u0435\u0437\u0435\u0440\u0432\u043D\u044B\u0439 \u0430\u0440\u0431\u0438\u0442\u0440: ${rc.fourth}.`;
+    if (rc.var) {
+      s += `
+  \u0412\u0438\u0434\u0435\u043E\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442\u044B (VAR): \u0413\u043B\u0430\u0432\u043D\u044B\u0439 \u0412\u0410\u0420 \u2014 ${rc.var}${rc.varProfile ? ` (${rc.varProfile.styleDesc || "\u043E\u043F\u044B\u0442\u043D\u044B\u0439 \u0432\u0438\u0434\u0435\u043E\u0441\u0443\u0434\u044C\u044F"})` : ""}, \u0410\u0412\u0410\u0420 \u2014 ${rc.avar || "\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043D\u0442 \u0412\u0410\u0420"}.`;
+    }
+    return s;
+  };
+  let u = `\u2550\u2550\u2550 \u041C\u0410\u0422\u0427: ${H} \u2014 ${A} | ${ctx.comp}, ${ctx.roundLabel} | ${ctx.date} ${ctx.time} | \u0421\u0442\u0430\u0434\u0438\u043E\u043D: ${ctx.stadium} \u2550\u2550\u2550
 `;
-  if (st) u += `\u0421\u041E\u0421\u0422\u041E\u042F\u041D\u0418\u0415 \u041C\u0410\u0422\u0427\u0410 \u041D\u0410 \u041C\u041E\u041C\u0415\u041D\u0422 \u041D\u0410\u0427\u0410\u041B\u0410 \u041F\u0415\u0420\u0418\u041E\u0414\u0410: \u0441\u0447\u0451\u0442 ${st.score[0]}:${st.score[1]}; \u0436\u0451\u043B\u0442\u044B\u0435: ${H}: ${st.yellows.home.join(", ") || "\u043D\u0435\u0442"}, ${A}: ${st.yellows.away.join(", ") || "\u043D\u0435\u0442"}; \u0443\u0434\u0430\u043B\u0435\u043D\u044B: ${st.reds.join(", ") || "\u043D\u0435\u0442"}; \u043F\u043E\u043A\u0438\u043D\u0443\u043B\u0438 \u043F\u043E\u043B\u0435 (\u0442\u0440\u0430\u0432\u043C\u0430/\u0437\u0430\u043C\u0435\u043D\u0430): ${st.off.join(", ") || "\u043D\u0435\u0442"}; \u0437\u0430\u043C\u0435\u043D\u044B: ${H} ${st.subs.home}/5, ${A} ${st.subs.away}/5. \u0417\u0430\u043C\u0435\u043D\u0438\u0432\u0448\u0438\u0435 \u0432\u044B\u0448\u043B\u0438 \u043D\u0430 \u043F\u043E\u043B\u0435: ${st.ins.join(", ") || "\u043D\u0435\u0442"}.${st.note ? ` \u0417\u0430\u043C\u0435\u0442\u043A\u0430 \u043E \u0445\u043E\u0434\u0435 \u0438\u0433\u0440\u044B: ${st.note}` : ""}
-\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0435 \u0441\u043E\u0431\u044B\u0442\u0438\u044F: ${st.last.join(" | ") || "\u2014"}
+  u += `\u041E\u0422\u0420\u0415\u0417\u041E\u041A \u0418\u0413\u0420\u042B: \u043C\u0438\u043D\u0443\u0442\u044B ${a}\u2013${b}
+
 `;
-  u += `
-\u041C\u0410\u0422\u0427: ${H} \u2014 ${A} | ${ctx.comp}, ${ctx.roundLabel} | ${ctx.date} ${ctx.time} | \u0421\u0442\u0430\u0434\u0438\u043E\u043D: ${ctx.stadium}
+  if (st) {
+    u += `\u0422\u0415\u041A\u0423\u0429\u0415\u0415 \u0421\u041E\u0421\u0422\u041E\u042F\u041D\u0418\u0415 \u041C\u0410\u0422\u0427\u0410 (\u043A \u043C\u0438\u043D\u0443\u0442\u0435 ${a}):
 `;
-  u += `
-\u041A\u041E\u041D\u0422\u0415\u041A\u0421\u0422 \u041E\u0411\u0415\u0418\u0425 \u041A\u041E\u041C\u0410\u041D\u0414 (\u0443\u0447\u0438\u0442\u044B\u0432\u0430\u0439 \u043E\u0431\u0435 \u0441\u0442\u043E\u0440\u043E\u043D\u044B):
-- ${ctx.motiv.home}
-- ${ctx.motiv.away}
-- \u041F\u0420\u041E\u0422\u0418\u0412\u041E\u0421\u0422\u041E\u042F\u041D\u0418\u0415: ${ctx.derby}
-- \u0413\u043E\u043D\u043A\u0430 \u0431\u043E\u043C\u0431\u0430\u0440\u0434\u0438\u0440\u043E\u0432 \u0420\u041F\u041B: ${ctx.race}
+    u += `- \u0421\u0447\u0451\u0442: ${H} ${st.score[0]}:${st.score[1]} ${A}
 `;
-  u += `
-\u041F\u041E\u0413\u041E\u0414\u0410 \u0418 \u041F\u041E\u041B\u0415: ${ctx.weather}
+    u += `- \u041F\u0440\u0435\u0434\u0443\u043F\u0440\u0435\u0436\u0434\u0435\u043D\u0438\u044F (\u0416\u041A): ${H}: ${st.yellows.home.join(", ") || "\u043D\u0435\u0442"} | ${A}: ${st.yellows.away.join(", ") || "\u043D\u0435\u0442"}
 `;
-  u += `
-\u0420\u0410\u0421\u041F\u0418\u0421\u0410\u041D\u0418\u0415 \u0418 \u0423\u0421\u0422\u0410\u041B\u041E\u0421\u0422\u042C:
-- ${H}: ${ctx.fat.home}
-- ${A}: ${ctx.fat.away}
+    u += `- \u0423\u0434\u0430\u043B\u0435\u043D\u0438\u044F (\u041A\u041A): ${st.reds.join(", ") || "\u043D\u0435\u0442"}
 `;
-  u += `
-\u0413\u041B\u0410\u0412\u041D\u042B\u0415 \u0422\u0420\u0415\u041D\u0415\u0420\u042B \u0418 \u0422\u0410\u041A\u0422\u0418\u0427\u0415\u0421\u041A\u0410\u042F \u0421\u0418\u041D\u0415\u0420\u0413\u0418\u042F:
-- ${H}: ${cInfo("home")}
-- ${A}: ${cInfo("away")}
+    u += `- \u041F\u043E\u043A\u0438\u043D\u0443\u043B\u0438 \u043F\u043E\u043B\u0435 (\u0442\u0440\u0430\u0432\u043C\u0430/\u0437\u0430\u043C\u0435\u043D\u0430): ${st.off.join(", ") || "\u043D\u0435\u0442"}
 `;
-  u += `
-\u0422\u0420\u0415\u041D\u0418\u0420\u041E\u0412\u041E\u0427\u041D\u042B\u0419 \u041F\u041B\u0410\u041D (\u0442\u0435\u043A\u0441\u0442 \u0442\u0440\u0435\u043D\u0435\u0440\u0430, \u043A\u0430\u043A \u0435\u0441\u0442\u044C):
-- ${H}: ${tr("home")}
-- ${A}: ${tr("away")}
+    u += `- \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D\u043E \u0437\u0430\u043C\u0435\u043D: ${H} ${st.subs.home}/5, ${A} ${st.subs.away}/5 (\u0432\u044B\u0448\u043B\u0438: ${st.ins.join(", ") || "\u043D\u0435\u0442"})
 `;
-  u += `
-\u0422\u0410\u041A\u0422\u0418\u041A\u0410 / \u0420\u0415\u0427\u042C \u0422\u0420\u0415\u041D\u0415\u0420\u0410 \u041F\u0415\u0420\u0415\u0414 \u041C\u0410\u0422\u0427\u0415\u041C (\u043A\u0430\u043A \u0435\u0441\u0442\u044C):
-- ${H}, \u0441\u0445\u0435\u043C\u0430 ${ctx.lineup.home.formation}: ${sp("home")}
-- ${A}, \u0441\u0445\u0435\u043C\u0430 ${ctx.lineup.away.formation}: ${sp("away")}
+    if (st.note) u += `- \u0425\u043E\u0434 \u0438\u0433\u0440\u044B \u0438 \u043C\u043E\u043C\u0435\u043D\u0442\u0443\u043C: ${st.note}
 `;
-  u += `
-${lineText(ctx, "home")}
+    u += `- \u0425\u0440\u043E\u043D\u0438\u043A\u0430 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0445 \u043C\u0438\u043D\u0443\u0442: ${st.last.join(" | ") || "\u043D\u0430\u0447\u0430\u043B\u043E \u0432\u0441\u0442\u0440\u0435\u0447\u0438"}
+
+`;
+  }
+  u += `1. \u0422\u0423\u0420\u041D\u0418\u0420\u041D\u0410\u042F \u0422\u0410\u0411\u041B\u0418\u0426\u0410 \u0418 \u0422\u0423\u0420\u041D\u0418\u0420\u041D\u041E\u0415 \u0417\u041D\u0410\u0427\u0415\u041D\u0418\u0415:
+`;
+  u += `- \u041F\u043E\u043B\u043E\u0436\u0435\u043D\u0438\u0435 ${H}: ${ctx.tableStandings.home}
+`;
+  u += `- \u041F\u043E\u043B\u043E\u0436\u0435\u043D\u0438\u0435 ${A}: ${ctx.tableStandings.away}
+`;
+  u += `- \u041C\u043E\u0442\u0438\u0432\u0430\u0446\u0438\u044F ${H}: ${ctx.motiv.home}
+`;
+  u += `- \u041C\u043E\u0442\u0438\u0432\u0430\u0446\u0438\u044F ${A}: ${ctx.motiv.away}
+`;
+  u += `- \u0421\u0422\u0410\u0422\u0423\u0421 \u0414\u0415\u0420\u0411\u0418 / \u041F\u0420\u0418\u041D\u0426\u0418\u041F\u0418\u0410\u041B\u042C\u041D\u041E\u0421\u0422\u042C: ${ctx.derby}
+`;
+  u += `- \u0413\u043E\u043D\u043A\u0430 \u0431\u043E\u043C\u0431\u0430\u0440\u0434\u0438\u0440\u043E\u0432 \u0447\u0435\u043C\u043F\u0438\u043E\u043D\u0430\u0442\u0430: ${ctx.race}
+
+`;
+  u += `2. \u0421\u0422\u0410\u0422\u0418\u0421\u0422\u0418\u041A\u0410 \u041A\u041E\u041C\u0410\u041D\u0414 \u0412 \u0422\u0423\u0420\u041D\u0418\u0420\u0415:
+`;
+  u += `- ${H}: ${ctx.teamStats.home}
+`;
+  u += `- ${A}: ${ctx.teamStats.away}
+
+`;
+  u += `3. \u0421\u0423\u0414\u0415\u0419\u0421\u041A\u0410\u042F \u0411\u0420\u0418\u0413\u0410\u0414\u0410 \u0418 VAR:
+${refInfo()}
+
+`;
+  u += `4. \u041F\u041E\u0413\u041E\u0414\u0410, \u0413\u0410\u0417\u041E\u041D \u0418 \u0424\u0418\u0417\u0418\u0427\u0415\u0421\u041A\u0418\u0419 \u0413\u0420\u0410\u0424\u0418\u041A:
+`;
+  u += `- \u041F\u043E\u0433\u043E\u0434\u0430 \u0438 \u0433\u0430\u0437\u043E\u043D: ${ctx.weather}
+`;
+  u += `- \u0424\u0438\u0437\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u0441\u043E\u0441\u0442\u043E\u044F\u043D\u0438\u0435 \u0438 \u0433\u0440\u0430\u0444\u0438\u043A ${H}: ${ctx.fat.home}
+`;
+  u += `- \u0424\u0438\u0437\u0438\u0447\u0435\u0441\u043A\u043E\u0435 \u0441\u043E\u0441\u0442\u043E\u044F\u043D\u0438\u0435 \u0438 \u0433\u0440\u0430\u0444\u0438\u043A ${A}: ${ctx.fat.away}
+
+`;
+  u += `5. \u0413\u041B\u0410\u0412\u041D\u042B\u0415 \u0422\u0420\u0415\u041D\u0415\u0420\u042B \u0418 \u0428\u0422\u0410\u0411:
+`;
+  u += `- ${H}: ${cInfo("home")}
+`;
+  u += `- ${A}: ${cInfo("away")}
+
+`;
+  u += `6. \u0422\u0420\u0415\u041D\u0418\u0420\u041E\u0412\u041E\u0427\u041D\u042B\u0419 \u041F\u0420\u041E\u0426\u0415\u0421\u0421 \u0418 \u041F\u0420\u0415\u0414\u041C\u0410\u0422\u0427\u0415\u0412\u042B\u0419 \u041F\u041B\u0410\u041D:
+`;
+  u += `- \u041D\u0435\u0434\u0435\u043B\u044C\u043D\u044B\u0439 \u0446\u0438\u043A\u043B ${H}: ${tr("home")}
+`;
+  u += `- \u041D\u0435\u0434\u0435\u043B\u044C\u043D\u044B\u0439 \u0446\u0438\u043A\u043B ${A}: ${tr("away")}
+
+`;
+  u += `7. \u0422\u0410\u041A\u0422\u0418\u0427\u0415\u0421\u041A\u0418\u0415 \u0421\u0425\u0415\u041C\u042B \u0418 \u0423\u0421\u0422\u0410\u041D\u041E\u0412\u041A\u0410 \u041D\u0410 \u0418\u0413\u0420\u0423:
+`;
+  u += `- ${H} (\u0441\u0445\u0435\u043C\u0430 ${ctx.lineup.home.formation}): ${sp("home")}
+`;
+  u += `- ${A} (\u0441\u0445\u0435\u043C\u0430 ${ctx.lineup.away.formation}): ${sp("away")}
+
+`;
+  u += `8. \u0421\u041E\u0421\u0422\u0410\u0412\u042B \u0418 \u041F\u0420\u041E\u0424\u0418\u041B\u0418 \u0418\u0413\u0420\u041E\u041A\u041E\u0412 (\u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439 \u0438\u0441\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u043B\u044C\u043D\u043E \u044D\u0442\u0438\u0445 \u0438\u0433\u0440\u043E\u043A\u043E\u0432):
+`;
+  u += `${lineText(ctx, "home")}
 
 ${lineText(ctx, "away")}
 `;
-  if (issues) u += `
-\u0412\u041D\u0418\u041C\u0410\u041D\u0418\u0415: \u043F\u0440\u043E\u0448\u043B\u0430\u044F \u043F\u043E\u043F\u044B\u0442\u043A\u0430 \u043E\u0442\u043A\u043B\u043E\u043D\u0435\u043D\u0430 \u0438\u0437-\u0437\u0430 \u043F\u0440\u043E\u0431\u043B\u0435\u043C: ${issues}. \u0418\u0441\u043F\u0440\u0430\u0432\u044C \u0438\u0445.
+  if (issues) {
+    u += `
+\u0412\u041D\u0418\u041C\u0410\u041D\u0418\u0415! \u041F\u0440\u043E\u0448\u043B\u0430\u044F \u043F\u043E\u043F\u044B\u0442\u043A\u0430 \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438 \u0431\u044B\u043B\u0430 \u043E\u0442\u043A\u043B\u043E\u043D\u0435\u043D\u0430: ${issues}. \u0421\u0442\u0440\u043E\u0433\u043E \u0443\u0441\u0442\u0440\u0430\u043D\u0438 \u0443\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0435 \u0437\u0430\u043C\u0435\u0447\u0430\u043D\u0438\u044F!
 `;
+  }
   u += `
-\u0421\u044B\u0433\u0440\u0430\u0439 \u043F\u0435\u0440\u0438\u043E\u0434 (\u043C\u0438\u043D\u0443\u0442\u044B ${a}\u2013${b}). \u0412\u0435\u0440\u043D\u0438 \u0442\u043E\u043B\u044C\u043A\u043E JSON \u043F\u043E \u0444\u043E\u0440\u043C\u0430\u0442\u0443 \u0438\u0437 \u0438\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0438.`;
+\u0421\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u0443\u0439 \u043E\u0442\u0440\u0435\u0437\u043E\u043A \u043C\u0430\u0442\u0447\u0430 (\u043C\u0438\u043D\u0443\u0442\u044B ${a}\u2013${b}) \u0441\u0442\u0440\u043E\u0433\u043E \u0432 \u0432\u0430\u043B\u0438\u0434\u043D\u043E\u043C JSON \u0431\u0435\u0437 markdown-\u043E\u0431\u0451\u0440\u0442\u043A\u0438 \u043F\u043E \u043F\u0440\u0430\u0432\u0438\u043B\u0430\u043C 10 \u0440\u0430\u0437\u0434\u0435\u043B\u043E\u0432 \u0441\u0438\u043C\u0443\u043B\u044F\u0442\u043E\u0440\u0430.`;
   return u;
 }
-var TYPES = new Set("kickoff possession pass dribble tackle duel foul yellow red shot save miss post goal own_goal penalty offside corner freekick injury sub var ref_error incident highlight halftime fulltime".split(" "));
+var TYPES = new Set("kickoff possession pass dribble tackle duel foul yellow red shot save miss post goal own_goal penalty offside corner freekick injury sub var ref_error incident cooling_break highlight halftime fulltime".split(" "));
 function indexNames(ctx) {
   return Object.entries(ctx.names).map(([pid, n]) => ({ pid, side: ctx.pidSide[pid], full: norm(n), last: norm(n).split(" ").pop() }));
 }
@@ -4530,7 +4661,7 @@ function deriveState(events, ctx, note) {
       if (nm(1)) st.off.push(nm(1));
       if (nm(0)) st.ins.push(nm(0));
     }
-    if (e.type === "injury" && nm(0)) st.off.push(nm(0));
+    if (e.type === "injury" && nm(0) && (e.out_days === void 0 || e.out_days > 0)) st.off.push(nm(0));
   }
   return st;
 }
@@ -4572,11 +4703,12 @@ function normalizeEvents(raw, a, b, ctx, prev) {
       continue;
     }
     const actor = type === "sub" || type === "save" ? null : pids[0];
-    if (actor && off.has(norm(ctx.names[actor])) && !["yellow", "red", "injury", "foul"].includes(type) && !["var", "incident", "highlight"].includes(type)) {
+    if (actor && off.has(norm(ctx.names[actor])) && !["yellow", "red", "injury", "foul"].includes(type) && !["var", "incident", "cooling_break", "highlight"].includes(type)) {
       probs.push(`${ctx.names[actor]} \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u043F\u043E\u0441\u043B\u0435 \u0443\u0445\u043E\u0434\u0430 \u0441 \u043F\u043E\u043B\u044F`);
     }
+    const outDays = type === "injury" ? e.out_days !== void 0 ? isNaN(+e.out_days) ? 14 : clamp(Math.round(+e.out_days), 0, 240) : 14 : void 0;
     if (type === "red" && pids[0]) off.add(norm(ctx.names[pids[0]]));
-    if (type === "injury" && pids[0]) off.add(norm(ctx.names[pids[0]]));
+    if (type === "injury" && pids[0] && (outDays === void 0 || outDays > 0)) off.add(norm(ctx.names[pids[0]]));
     if (type === "sub") {
       if (["home", "away"].includes(team2)) {
         if (++subs[team2] > 5) probs.push("\u0431\u043E\u043B\u044C\u0448\u0435 5 \u0437\u0430\u043C\u0435\u043D");
@@ -4585,7 +4717,7 @@ function normalizeEvents(raw, a, b, ctx, prev) {
     }
     const ev = { min, sec, team: team2, type, players: names, pids, text: String(e.text || "").slice(0, 500) };
     if (type === "shot" || type === "penalty") ev.xg = clamp(+e.xg || (type === "penalty" ? 0.76 : 0.08), 0.01, 0.95);
-    if (type === "injury") ev.out_days = clamp(Math.round(+e.out_days) || 14, 1, 240);
+    if (type === "injury") ev.out_days = outDays;
     out.push(ev);
   }
   {
@@ -4953,7 +5085,7 @@ function finish(id) {
   for (const e of m.events) {
     const p = player(e.pids?.[0]);
     if (!p) continue;
-    if (e.type === "injury") p.out = { until: addDays(f.date, e.out_days || 14), reason: e.text.slice(0, 120) };
+    if (e.type === "injury" && (e.out_days === void 0 || e.out_days > 0)) p.out = { until: addDays(f.date, e.out_days || 14), reason: e.text.slice(0, 120) };
     if (e.type === "red") p.banLeft = 1;
     if (e.type === "yellow") {
       p.seasonYC = (p.seasonYC || 0) + 1;
