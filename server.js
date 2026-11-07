@@ -3251,7 +3251,6 @@ function load() {
   } else if (db.cupState2026 && db.fixtures.length) {
     recalculateCupGroups(db.cupState2026, db.fixtures);
   }
-  ensureInitialTransfers();
   ensureInitialBudgets();
   save();
 }
@@ -3459,284 +3458,6 @@ function formatTransferForPublic(t) {
       summary: `${p?.goals || 0} \u0433\u043E\u043B\u043E\u0432, ${p?.assists || 0} \u0430\u0441\u0441\u0438\u0441\u0442\u043E\u0432 \u0432 ${p?.matches || 0} \u043C\u0430\u0442\u0447\u0430\u0445`
     }
   };
-}
-function ensureInitialTransfers() {
-  if (!db.transfers) db.transfers = [];
-  if (db.transfers.length > 0) return;
-  const findT = (name) => db.teams.find((x) => x.name === name);
-  const zenit = findT("\u0417\u0435\u043D\u0438\u0442");
-  const spartak = findT("\u0421\u043F\u0430\u0440\u0442\u0430\u043A");
-  const cska = findT("\u0426\u0421\u041A\u0410");
-  const rubin = findT("\u0420\u0443\u0431\u0438\u043D");
-  const loko = findT("\u041B\u043E\u043A\u043E\u043C\u043E\u0442\u0438\u0432");
-  const baltika = findT("\u0411\u0430\u043B\u0442\u0438\u043A\u0430");
-  const krasnodar = findT("\u041A\u0440\u0430\u0441\u043D\u043E\u0434\u0430\u0440");
-  const rostov = findT("\u0420\u043E\u0441\u0442\u043E\u0432");
-  const dynamo = findT("\u0414\u0438\u043D\u0430\u043C\u043E \u041C\u043E\u0441\u043A\u0432\u0430");
-  const seeds = [
-    {
-      id: "tr_artur",
-      playerName: "\u0410\u0440\u0442\u0443\u0440",
-      pos: "\u041F\u0412",
-      from: "foreign_palmeiras",
-      fromName: "\u041F\u0430\u043B\u043C\u0435\u0439\u0440\u0430\u0441 (\u0411\u0440\u0430\u0437\u0438\u043B\u0438\u044F)",
-      to: zenit?.id || "87628bf185",
-      toName: "\u0417\u0435\u043D\u0438\u0442",
-      fee: "\u20AC15.0M",
-      feeAmount: 15,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-06-28",
-      statsForNewClub: {
-        matches: 16,
-        goals: 4,
-        assists: 3,
-        rating: 7.15,
-        impactScore: 68,
-        summary: "4 \u0433\u043E\u043B\u0430 + 3 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438 \u0432 16 \u043C\u0430\u0442\u0447\u0430\u0445"
-      }
-    },
-    {
-      id: "tr_barco",
-      playerName: "\u042D\u0441\u0435\u043A\u044C\u0435\u043B\u044C \u0411\u0430\u0440\u043A\u043E",
-      pos: "\u0410\u041F",
-      from: "foreign_river",
-      fromName: "\u0420\u0438\u0432\u0435\u0440 \u041F\u043B\u0435\u0439\u0442 (\u0410\u0440\u0433\u0435\u043D\u0442\u0438\u043D\u0430)",
-      to: spartak?.id || "605409acc5",
-      toName: "\u0421\u043F\u0430\u0440\u0442\u0430\u043A",
-      fee: "\u20AC14.0M",
-      feeAmount: 14,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-15",
-      statsForNewClub: {
-        matches: 17,
-        goals: 6,
-        assists: 6,
-        rating: 7.65,
-        impactScore: 84,
-        summary: "6 \u0433\u043E\u043B\u043E\u0432 + 6 \u0430\u0441\u0441\u0438\u0441\u0442\u043E\u0432 \u0432 17 \u043C\u0430\u0442\u0447\u0430\u0445 (\u0433\u043B\u0430\u0432\u043D\u044B\u0439 \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440)"
-      }
-    },
-    {
-      id: "tr_ugalde",
-      playerName: "\u041C\u0430\u043D\u0444\u0440\u0435\u0434 \u0423\u0433\u0430\u043B\u044C\u0434\u0435",
-      pos: "\u0426\u0424",
-      from: "foreign_twente",
-      fromName: "\u0422\u0432\u0435\u043D\u0442\u0435 (\u041D\u0438\u0434\u0435\u0440\u043B\u0430\u043D\u0434\u044B)",
-      to: spartak?.id || "605409acc5",
-      toName: "\u0421\u043F\u0430\u0440\u0442\u0430\u043A",
-      fee: "\u20AC13.0M",
-      feeAmount: 13,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-08",
-      statsForNewClub: {
-        matches: 18,
-        goals: 15,
-        assists: 3,
-        rating: 7.88,
-        impactScore: 94,
-        summary: "15 \u0433\u043E\u043B\u043E\u0432 + 3 \u0430\u0441\u0441\u0438\u0441\u0442\u0430 \u0432 18 \u043C\u0430\u0442\u0447\u0430\u0445 (\u043B\u0443\u0447\u0448\u0438\u0439 \u0431\u043E\u043C\u0431\u0430\u0440\u0434\u0438\u0440 \u043B\u0438\u0433\u0438)"
-      }
-    },
-    {
-      id: "tr_gondou",
-      playerName: "\u041B\u0443\u0441\u0438\u0430\u043D\u043E \u0413\u043E\u043D\u0434\u0443",
-      pos: "\u0426\u0424",
-      from: "foreign_argentinos",
-      fromName: "\u0410\u0440\u0445\u0435\u043D\u0442\u0438\u043D\u043E\u0441 \u0425\u0443\u043D\u0438\u043E\u0440\u0441",
-      to: zenit?.id || "87628bf185",
-      toName: "\u0417\u0435\u043D\u0438\u0442",
-      fee: "\u20AC12.0M",
-      feeAmount: 12,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-08-02",
-      statsForNewClub: {
-        matches: 14,
-        goals: 7,
-        assists: 2,
-        rating: 7.45,
-        impactScore: 78,
-        summary: "7 \u0433\u043E\u043B\u043E\u0432 + 2 \u043F\u0435\u0440\u0435\u0434\u0430\u0447\u0438 \u0432 14 \u043C\u0430\u0442\u0447\u0430\u0445"
-      }
-    },
-    {
-      id: "tr_bitello",
-      playerName: "\u0411\u0438\u0442\u0435\u043B\u043B\u043E",
-      pos: "\u0426\u041F",
-      from: "foreign_gremio",
-      fromName: "\u0413\u0440\u0435\u043C\u0438\u043E (\u0411\u0440\u0430\u0437\u0438\u043B\u0438\u044F)",
-      to: dynamo?.id || "b9b38696b1",
-      toName: "\u0414\u0438\u043D\u0430\u043C\u043E \u041C\u043E\u0441\u043A\u0432\u0430",
-      fee: "\u20AC10.0M",
-      feeAmount: 10,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-12",
-      statsForNewClub: {
-        matches: 16,
-        goals: 5,
-        assists: 5,
-        rating: 7.55,
-        impactScore: 82,
-        summary: "5 \u0433\u043E\u043B\u043E\u0432 + 5 \u0430\u0441\u0441\u0438\u0441\u0442\u043E\u0432 \u0432 16 \u043C\u0430\u0442\u0447\u0430\u0445"
-      }
-    },
-    {
-      id: "tr_daku",
-      playerName: "\u041C\u0438\u0440\u043B\u0438\u043D\u0434 \u0414\u0430\u043A\u0443",
-      pos: "\u0426\u0424",
-      from: "foreign_osijek",
-      fromName: "\u041E\u0441\u0438\u0435\u043A (\u0425\u043E\u0440\u0432\u0430\u0442\u0438\u044F)",
-      to: rubin?.id || "84394543c8",
-      toName: "\u0420\u0443\u0431\u0438\u043D",
-      fee: "\u20AC7.5M",
-      feeAmount: 7.5,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-04",
-      statsForNewClub: {
-        matches: 17,
-        goals: 10,
-        assists: 4,
-        rating: 7.72,
-        impactScore: 91,
-        summary: "10 \u0433\u043E\u043B\u043E\u0432 + 4 \u0430\u0441\u0441\u0438\u0441\u0442\u0430 \u0432 17 \u043C\u0430\u0442\u0447\u0430\u0445 (\u0433\u043B\u0430\u0432\u043D\u044B\u0439 \u0431\u043E\u043C\u0431\u0430\u0440\u0434\u0438\u0440 \u0420\u0443\u0431\u0438\u043D\u0430)"
-      }
-    },
-    {
-      id: "tr_glushenkov",
-      playerName: "\u041C\u0430\u043A\u0441\u0438\u043C \u0413\u043B\u0443\u0448\u0435\u043D\u043A\u043E\u0432",
-      pos: "\u041F\u0412",
-      from: loko?.id || "8e1e2eb19d",
-      fromName: "\u041B\u043E\u043A\u043E\u043C\u043E\u0442\u0438\u0432",
-      to: zenit?.id || "87628bf185",
-      toName: "\u0417\u0435\u043D\u0438\u0442",
-      fee: "\u20AC6.3M",
-      feeAmount: 6.3,
-      type: "transfer",
-      note: "\u0412\u044B\u043A\u0443\u043F \u043E\u0442\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u043C\u0435\u0436\u0434\u0443 \u043A\u043B\u0443\u0431\u0430\u043C\u0438 \u0420\u041F\u041B",
-      status: "approved",
-      isRplToRpl: true,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-01",
-      statsForNewClub: {
-        matches: 14,
-        goals: 9,
-        assists: 5,
-        rating: 7.95,
-        impactScore: 96,
-        summary: "9 \u0433\u043E\u043B\u043E\u0432 + 5 \u0430\u0441\u0441\u0438\u0441\u0442\u043E\u0432 \u0432 14 \u043C\u0430\u0442\u0447\u0430\u0445 (\u0441\u0440. \u043E\u0446\u0435\u043D\u043A\u0430 7.95, \u0441\u0443\u043F\u0435\u0440\u0432\u043A\u043B\u0430\u0434!)"
-      }
-    },
-    {
-      id: "tr_fayzullaev",
-      playerName: "\u0410\u0431\u0431\u043E\u0441\u0431\u0435\u043A \u0424\u0430\u0439\u0437\u0443\u043B\u043B\u0430\u0435\u0432",
-      pos: "\u0410\u041F",
-      from: "foreign_pakhtakor",
-      fromName: "\u041F\u0430\u0445\u0442\u0430\u043A\u043E\u0440 (\u0422\u0430\u0448\u043A\u0435\u043D\u0442)",
-      to: cska?.id || "b459009212",
-      toName: "\u0426\u0421\u041A\u0410",
-      fee: "\u20AC0.5M",
-      feeAmount: 0.5,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440",
-      status: "approved",
-      isRplToRpl: false,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-06-20",
-      statsForNewClub: {
-        matches: 18,
-        goals: 5,
-        assists: 11,
-        rating: 7.85,
-        impactScore: 98,
-        summary: "5 \u0433\u043E\u043B\u043E\u0432 + 11 \u0430\u0441\u0441\u0438\u0441\u0442\u043E\u0432 \u0432 18 \u043C\u0430\u0442\u0447\u0430\u0445 (\u0444\u0435\u043D\u043E\u043C\u0435\u043D\u0430\u043B\u044C\u043D\u044B\u0439 ROI: \u20AC500K)"
-      }
-    },
-    {
-      id: "tr_musaev",
-      playerName: "\u0422\u0430\u043C\u0435\u0440\u043B\u0430\u043D \u041C\u0443\u0441\u0430\u0435\u0432",
-      pos: "\u0426\u0424",
-      from: baltika?.id || "f01f623343",
-      fromName: "\u0411\u0430\u043B\u0442\u0438\u043A\u0430",
-      to: cska?.id || "b459009212",
-      toName: "\u0426\u0421\u041A\u0410",
-      fee: "\u20AC0.3M",
-      feeAmount: 0.3,
-      type: "transfer",
-      note: "\u041F\u043E\u043B\u043D\u043E\u0446\u0435\u043D\u043D\u044B\u0439 \u0442\u0440\u0430\u043D\u0441\u0444\u0435\u0440 \u043C\u0435\u0436\u0434\u0443 \u043A\u043B\u0443\u0431\u0430\u043C\u0438",
-      status: "approved",
-      isRplToRpl: true,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-11",
-      statsForNewClub: {
-        matches: 17,
-        goals: 7,
-        assists: 3,
-        rating: 7.42,
-        impactScore: 92,
-        summary: "7 \u0433\u043E\u043B\u043E\u0432 + 3 \u0430\u0441\u0441\u0438\u0441\u0442\u0430 \u0432 17 \u043C\u0430\u0442\u0447\u0430\u0445 (\u0441\u0438\u043C\u0432\u043E\u043B\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u0446\u0435\u043D\u0430 \u20AC300K)"
-      }
-    },
-    {
-      id: "tr_koksharov",
-      playerName: "\u0410\u043B\u0435\u043A\u0441\u0430\u043D\u0434\u0440 \u041A\u043E\u043A\u0448\u0430\u0440\u043E\u0432",
-      pos: "\u0426\u0424",
-      from: krasnodar?.id || "ec371266ce",
-      fromName: "\u041A\u0440\u0430\u0441\u043D\u043E\u0434\u0430\u0440",
-      to: rostov?.id || "8cbf573c80",
-      toName: "\u0420\u043E\u0441\u0442\u043E\u0432",
-      fee: "\u20AC0.8M",
-      feeAmount: 0.8,
-      type: "loan",
-      note: "\u0410\u0440\u0435\u043D\u0434\u0430 (1 \u0433\u043E\u0434) \u043C\u0435\u0436\u0434\u0443 \u043A\u043B\u0443\u0431\u0430\u043C\u0438 \u0420\u041F\u041B",
-      status: "approved",
-      isRplToRpl: true,
-      adminApproval: "approved",
-      clubApproval: "approved",
-      date: "2026-07-25",
-      statsForNewClub: {
-        matches: 13,
-        goals: 4,
-        assists: 2,
-        rating: 7.2,
-        impactScore: 76,
-        summary: "4 \u0433\u043E\u043B\u0430 + 2 \u0430\u0441\u0441\u0438\u0441\u0442\u0430 \u0432 13 \u043C\u0430\u0442\u0447\u0430\u0445 (\u0443\u0441\u043F\u0435\u0448\u043D\u0430\u044F \u0430\u0440\u0435\u043D\u0434\u0430)"
-      }
-    }
-  ];
-  db.transfers = seeds;
-  save();
 }
 var INITIAL_RPL_BUDGETS = {
   "\u0417\u0435\u043D\u0438\u0442": 45e6,
@@ -5810,7 +5531,6 @@ app.get("/api/regulations/:comp", (req, res) => {
 });
 app.get("/api/table/:comp", (req, res) => res.json(table(req.params.comp)));
 app.get("/api/transfers/top", (req, res) => {
-  ensureInitialTransfers();
   const approved = (db.transfers || []).filter((t) => t.status === "approved");
   const expensive = [...approved].sort((a, b) => {
     const amtA = a.feeAmount !== void 0 ? a.feeAmount : parseFeeAmount(a.fee);
@@ -5837,6 +5557,146 @@ app.get("/api/fixtures", (req, res) => {
   l = l.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   res.json(l.map(pubFx));
 });
+function getHeadToHead(homeTid, awayTid, currentFixtureId) {
+  const H = team(homeTid);
+  const A = team(awayTid);
+  const hName = H?.name || tn(homeTid);
+  const aName = A?.name || tn(awayTid);
+  const hLogo = teamLogo(homeTid);
+  const aLogo = teamLogo(awayTid);
+  const realPlayed = (db.fixtures || []).filter((f) => {
+    if (currentFixtureId && f.id === currentFixtureId) return false;
+    if (f.status !== "done") return false;
+    return f.home === homeTid && f.away === awayTid || f.home === awayTid && f.away === homeTid;
+  }).sort((a, b) => ((b.date || "") + (b.time || "")).localeCompare((a.date || "") + (a.time || "")));
+  const matches = [];
+  for (const f of realPlayed) {
+    const isDirectHome = f.home === homeTid;
+    const hg = f.hg ?? 0;
+    const ag = f.ag ?? 0;
+    const homeGoals = isDirectHome ? hg : ag;
+    const awayGoals = isDirectHome ? ag : hg;
+    let outcome = "draw";
+    if (homeGoals > awayGoals) outcome = "home";
+    else if (awayGoals > homeGoals) outcome = "away";
+    matches.push({
+      id: f.id,
+      date: f.date || "2026-08-10",
+      time: f.time || "18:00",
+      comp: compName(f) || "\u0420\u041F\u041B",
+      round: roundLabel(f) || "",
+      homeId: f.home,
+      awayId: f.away,
+      homeName: tn(f.home),
+      awayName: tn(f.away),
+      homeLogo: teamLogo(f.home),
+      awayLogo: teamLogo(f.away),
+      homeGoals: hg,
+      awayGoals: ag,
+      score: `${hg} : ${ag}`,
+      penalties: f.penalties ? `${f.penalties.home} : ${f.penalties.away} \u043F\u0435\u043D.` : void 0,
+      outcome,
+      // относительно текущей пары (homeTid против awayTid)
+      winnerId: hg > ag ? f.home : ag > hg ? f.away : null,
+      stadium: team(f.home)?.stadium || "",
+      isSimulated: true
+    });
+    if (matches.length >= 10) break;
+  }
+  if (matches.length < 10) {
+    const need = 10 - matches.length;
+    let seedVal = 0;
+    for (let i = 0; i < (homeTid + awayTid).length; i++) {
+      seedVal = seedVal * 31 + (homeTid + awayTid).charCodeAt(i) & 16777215;
+    }
+    const pseudoRandom = (step) => {
+      const x = Math.sin(seedVal + step * 7919) * 1e4;
+      return x - Math.floor(x);
+    };
+    const comps = ["\u0420\u041F\u041B", "\u0420\u041F\u041B", "\u0420\u041F\u041B", "\u041A\u0443\u0431\u043E\u043A \u0420\u043E\u0441\u0441\u0438\u0438", "\u0420\u041F\u041B", "\u0420\u041F\u041B", "\u041A\u0443\u0431\u043E\u043A \u0420\u043E\u0441\u0441\u0438\u0438", "\u0421\u0443\u043F\u0435\u0440\u043A\u0443\u0431\u043E\u043A"];
+    const years = [2026, 2025, 2025, 2024, 2024, 2023, 2023, 2022, 2022, 2021];
+    const months = ["03", "05", "08", "09", "10", "11", "04", "07", "12", "06"];
+    const days = ["12", "24", "18", "03", "29", "15", "07", "21", "30", "14"];
+    for (let i = 0; i < need; i++) {
+      const idx = matches.length;
+      const r1 = pseudoRandom(idx * 3 + 1);
+      const r2 = pseudoRandom(idx * 3 + 2);
+      const r3 = pseudoRandom(idx * 3 + 3);
+      const altHome = idx % 2 === 0;
+      const currentHomeId = altHome ? homeTid : awayTid;
+      const currentAwayId = altHome ? awayTid : homeTid;
+      let hScore = 0;
+      let aScore = 0;
+      if (r1 < 0.28) {
+        hScore = r2 < 0.5 ? 1 : r2 < 0.85 ? 0 : 2;
+        aScore = hScore;
+      } else if (r1 < 0.65) {
+        hScore = r2 < 0.4 ? 1 : r2 < 0.8 ? 2 : 3;
+        aScore = r3 < 0.5 ? 0 : 1;
+        if (hScore <= aScore) hScore = aScore + 1;
+      } else {
+        aScore = r2 < 0.45 ? 1 : r2 < 0.85 ? 2 : 3;
+        hScore = r3 < 0.6 ? 0 : 1;
+        if (aScore <= hScore) aScore = hScore + 1;
+      }
+      const isDirectHome = currentHomeId === homeTid;
+      const hgRel = isDirectHome ? hScore : aScore;
+      const agRel = isDirectHome ? aScore : hScore;
+      let outcome = "draw";
+      if (hgRel > agRel) outcome = "home";
+      else if (agRel > hgRel) outcome = "away";
+      const yr = years[idx % years.length];
+      const mo = months[idx % months.length];
+      const dy = days[idx % days.length];
+      matches.push({
+        id: `hist_${homeTid}_${awayTid}_${idx}`,
+        date: `${yr}-${mo}-${dy}`,
+        time: "19:00",
+        comp: comps[idx % comps.length],
+        round: comps[idx % comps.length].includes("\u041A\u0443\u0431\u043E\u043A") ? "1/4 \u0444\u0438\u043D\u0430\u043B\u0430" : `${idx % 25 + 1} \u0442\u0443\u0440`,
+        homeId: currentHomeId,
+        awayId: currentAwayId,
+        homeName: tn(currentHomeId),
+        awayName: tn(currentAwayId),
+        homeLogo: teamLogo(currentHomeId),
+        awayLogo: teamLogo(currentAwayId),
+        homeGoals: hScore,
+        awayGoals: aScore,
+        score: `${hScore} : ${aScore}`,
+        outcome,
+        winnerId: hScore > aScore ? currentHomeId : aScore > hScore ? currentAwayId : null,
+        stadium: team(currentHomeId)?.stadium || "",
+        isSimulated: false
+      });
+    }
+  }
+  let homeWins = 0, draws = 0, awayWins = 0, homeGoalsTotal = 0, awayGoalsTotal = 0;
+  for (const m of matches) {
+    if (m.outcome === "home") homeWins++;
+    else if (m.outcome === "away") awayWins++;
+    else draws++;
+    if (m.homeId === homeTid) {
+      homeGoalsTotal += m.homeGoals;
+      awayGoalsTotal += m.awayGoals;
+    } else {
+      homeGoalsTotal += m.awayGoals;
+      awayGoalsTotal += m.homeGoals;
+    }
+  }
+  return {
+    homeTeam: { id: homeTid, name: hName, logo: hLogo },
+    awayTeam: { id: awayTid, name: aName, logo: aLogo },
+    stats: {
+      total: matches.length,
+      homeWins,
+      draws,
+      awayWins,
+      homeGoals: homeGoalsTotal,
+      awayGoals: awayGoalsTotal
+    },
+    matches
+  };
+}
 app.get("/api/match/:id", (req, res) => {
   const f = fx(req.params.id);
   if (!f) return fail(res, "\u041C\u0430\u0442\u0447 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D", 404);
@@ -5886,7 +5746,8 @@ app.get("/api/match/:id", (req, res) => {
     coaches: {
       home: { coach: coachHome, synergy: computeCoachSynergy(coachHome, db.tactics[f.home]) },
       away: { coach: coachAway, synergy: computeCoachSynergy(coachAway, db.tactics[f.away]) }
-    }
+    },
+    h2h: getHeadToHead(f.home, f.away, f.id)
   };
   if (m && (f.status === "live" || f.status === "done")) {
     out.events = f.status === "live" ? m.events.slice(0, f.pos) : m.events;

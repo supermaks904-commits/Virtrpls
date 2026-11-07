@@ -734,7 +734,6 @@ function load() {
     recalculateCupGroups(db.cupState2026, db.fixtures);
   }
 
-  ensureInitialTransfers();
   ensureInitialBudgets();
   save();
 }
@@ -956,285 +955,8 @@ function formatTransferForPublic(t: any) {
 
 function ensureInitialTransfers() {
   if (!db.transfers) db.transfers = [];
-  if (db.transfers.length > 0) return;
-
-  const findT = (name: string) => db.teams.find((x: any) => x.name === name);
-  const zenit = findT('Зенит');
-  const spartak = findT('Спартак');
-  const cska = findT('ЦСКА');
-  const rubin = findT('Рубин');
-  const loko = findT('Локомотив');
-  const baltika = findT('Балтика');
-  const krasnodar = findT('Краснодар');
-  const rostov = findT('Ростов');
-  const dynamo = findT('Динамо Москва');
-
-  const seeds: any[] = [
-    {
-      id: 'tr_artur',
-      playerName: 'Артур',
-      pos: 'ПВ',
-      from: 'foreign_palmeiras',
-      fromName: 'Палмейрас (Бразилия)',
-      to: zenit?.id || '87628bf185',
-      toName: 'Зенит',
-      fee: '€15.0M',
-      feeAmount: 15.0,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-06-28',
-      statsForNewClub: {
-        matches: 16,
-        goals: 4,
-        assists: 3,
-        rating: 7.15,
-        impactScore: 68,
-        summary: '4 гола + 3 передачи в 16 матчах'
-      }
-    },
-    {
-      id: 'tr_barco',
-      playerName: 'Эсекьель Барко',
-      pos: 'АП',
-      from: 'foreign_river',
-      fromName: 'Ривер Плейт (Аргентина)',
-      to: spartak?.id || '605409acc5',
-      toName: 'Спартак',
-      fee: '€14.0M',
-      feeAmount: 14.0,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-15',
-      statsForNewClub: {
-        matches: 17,
-        goals: 6,
-        assists: 6,
-        rating: 7.65,
-        impactScore: 84,
-        summary: '6 голов + 6 ассистов в 17 матчах (главный диспетчер)'
-      }
-    },
-    {
-      id: 'tr_ugalde',
-      playerName: 'Манфред Угальде',
-      pos: 'ЦФ',
-      from: 'foreign_twente',
-      fromName: 'Твенте (Нидерланды)',
-      to: spartak?.id || '605409acc5',
-      toName: 'Спартак',
-      fee: '€13.0M',
-      feeAmount: 13.0,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-08',
-      statsForNewClub: {
-        matches: 18,
-        goals: 15,
-        assists: 3,
-        rating: 7.88,
-        impactScore: 94,
-        summary: '15 голов + 3 ассиста в 18 матчах (лучший бомбардир лиги)'
-      }
-    },
-    {
-      id: 'tr_gondou',
-      playerName: 'Лусиано Гонду',
-      pos: 'ЦФ',
-      from: 'foreign_argentinos',
-      fromName: 'Архентинос Хуниорс',
-      to: zenit?.id || '87628bf185',
-      toName: 'Зенит',
-      fee: '€12.0M',
-      feeAmount: 12.0,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-08-02',
-      statsForNewClub: {
-        matches: 14,
-        goals: 7,
-        assists: 2,
-        rating: 7.45,
-        impactScore: 78,
-        summary: '7 голов + 2 передачи в 14 матчах'
-      }
-    },
-    {
-      id: 'tr_bitello',
-      playerName: 'Бителло',
-      pos: 'ЦП',
-      from: 'foreign_gremio',
-      fromName: 'Гремио (Бразилия)',
-      to: dynamo?.id || 'b9b38696b1',
-      toName: 'Динамо Москва',
-      fee: '€10.0M',
-      feeAmount: 10.0,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-12',
-      statsForNewClub: {
-        matches: 16,
-        goals: 5,
-        assists: 5,
-        rating: 7.55,
-        impactScore: 82,
-        summary: '5 голов + 5 ассистов в 16 матчах'
-      }
-    },
-    {
-      id: 'tr_daku',
-      playerName: 'Мирлинд Даку',
-      pos: 'ЦФ',
-      from: 'foreign_osijek',
-      fromName: 'Осиек (Хорватия)',
-      to: rubin?.id || '84394543c8',
-      toName: 'Рубин',
-      fee: '€7.5M',
-      feeAmount: 7.5,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-04',
-      statsForNewClub: {
-        matches: 17,
-        goals: 10,
-        assists: 4,
-        rating: 7.72,
-        impactScore: 91,
-        summary: '10 голов + 4 ассиста в 17 матчах (главный бомбардир Рубина)'
-      }
-    },
-    {
-      id: 'tr_glushenkov',
-      playerName: 'Максим Глушенков',
-      pos: 'ПВ',
-      from: loko?.id || '8e1e2eb19d',
-      fromName: 'Локомотив',
-      to: zenit?.id || '87628bf185',
-      toName: 'Зенит',
-      fee: '€6.3M',
-      feeAmount: 6.3,
-      type: 'transfer',
-      note: 'Выкуп отступных между клубами РПЛ',
-      status: 'approved',
-      isRplToRpl: true,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-01',
-      statsForNewClub: {
-        matches: 14,
-        goals: 9,
-        assists: 5,
-        rating: 7.95,
-        impactScore: 96,
-        summary: '9 голов + 5 ассистов в 14 матчах (ср. оценка 7.95, супервклад!)'
-      }
-    },
-    {
-      id: 'tr_fayzullaev',
-      playerName: 'Аббосбек Файзуллаев',
-      pos: 'АП',
-      from: 'foreign_pakhtakor',
-      fromName: 'Пахтакор (Ташкент)',
-      to: cska?.id || 'b459009212',
-      toName: 'ЦСКА',
-      fee: '€0.5M',
-      feeAmount: 0.5,
-      type: 'transfer',
-      note: 'Полноценный трансфер',
-      status: 'approved',
-      isRplToRpl: false,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-06-20',
-      statsForNewClub: {
-        matches: 18,
-        goals: 5,
-        assists: 11,
-        rating: 7.85,
-        impactScore: 98,
-        summary: '5 голов + 11 ассистов в 18 матчах (феноменальный ROI: €500K)'
-      }
-    },
-    {
-      id: 'tr_musaev',
-      playerName: 'Тамерлан Мусаев',
-      pos: 'ЦФ',
-      from: baltika?.id || 'f01f623343',
-      fromName: 'Балтика',
-      to: cska?.id || 'b459009212',
-      toName: 'ЦСКА',
-      fee: '€0.3M',
-      feeAmount: 0.3,
-      type: 'transfer',
-      note: 'Полноценный трансфер между клубами',
-      status: 'approved',
-      isRplToRpl: true,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-11',
-      statsForNewClub: {
-        matches: 17,
-        goals: 7,
-        assists: 3,
-        rating: 7.42,
-        impactScore: 92,
-        summary: '7 голов + 3 ассиста в 17 матчах (символическая цена €300K)'
-      }
-    },
-    {
-      id: 'tr_koksharov',
-      playerName: 'Александр Кокшаров',
-      pos: 'ЦФ',
-      from: krasnodar?.id || 'ec371266ce',
-      fromName: 'Краснодар',
-      to: rostov?.id || '8cbf573c80',
-      toName: 'Ростов',
-      fee: '€0.8M',
-      feeAmount: 0.8,
-      type: 'loan',
-      note: 'Аренда (1 год) между клубами РПЛ',
-      status: 'approved',
-      isRplToRpl: true,
-      adminApproval: 'approved',
-      clubApproval: 'approved',
-      date: '2026-07-25',
-      statsForNewClub: {
-        matches: 13,
-        goals: 4,
-        assists: 2,
-        rating: 7.20,
-        impactScore: 76,
-        summary: '4 гола + 2 ассиста в 13 матчах (успешная аренда)'
-      }
-    }
-  ];
-
-  db.transfers = seeds;
-  save();
 }
+
 
 /* ───────── бюджеты клубов и шкала призовых (РПЛ и Кубок) ───────── */
 const INITIAL_RPL_BUDGETS: Record<string, number> = {
@@ -3198,7 +2920,6 @@ app.get('/api/regulations/:comp', (req, res) => {
 app.get('/api/table/:comp', (req, res) => res.json(table(req.params.comp)));
 
 app.get('/api/transfers/top', (req, res) => {
-  ensureInitialTransfers();
   const approved = (db.transfers || []).filter((t: any) => t.status === 'approved');
 
   // Самые дорогие (по сумме сделки)
@@ -3235,6 +2956,168 @@ app.get('/api/fixtures', (req, res) => {
   l = l.sort((a: any, b: any) => (a.date + a.time).localeCompare(b.date + b.time));
   res.json(l.map(pubFx));
 });
+
+function getHeadToHead(homeTid: string, awayTid: string, currentFixtureId?: string) {
+  const H = team(homeTid);
+  const A = team(awayTid);
+  const hName = H?.name || tn(homeTid);
+  const aName = A?.name || tn(awayTid);
+  const hLogo = teamLogo(homeTid);
+  const aLogo = teamLogo(awayTid);
+
+  // 1. Собрать реально сыгранные матчи из базы данных между этими двумя командами
+  const realPlayed = (db.fixtures || []).filter((f: any) => {
+    if (currentFixtureId && f.id === currentFixtureId) return false;
+    if (f.status !== 'done') return false;
+    return (f.home === homeTid && f.away === awayTid) || (f.home === awayTid && f.away === homeTid);
+  }).sort((a: any, b: any) => ((b.date || '') + (b.time || '')).localeCompare((a.date || '') + (a.time || '')));
+
+  const matches: any[] = [];
+  for (const f of realPlayed) {
+    const isDirectHome = f.home === homeTid;
+    const hg = f.hg ?? 0;
+    const ag = f.ag ?? 0;
+    const homeGoals = isDirectHome ? hg : ag;
+    const awayGoals = isDirectHome ? ag : hg;
+    let outcome: 'home' | 'away' | 'draw' = 'draw';
+    if (homeGoals > awayGoals) outcome = 'home';
+    else if (awayGoals > homeGoals) outcome = 'away';
+
+    matches.push({
+      id: f.id,
+      date: f.date || '2026-08-10',
+      time: f.time || '18:00',
+      comp: compName(f) || 'РПЛ',
+      round: roundLabel(f) || '',
+      homeId: f.home,
+      awayId: f.away,
+      homeName: tn(f.home),
+      awayName: tn(f.away),
+      homeLogo: teamLogo(f.home),
+      awayLogo: teamLogo(f.away),
+      homeGoals: hg,
+      awayGoals: ag,
+      score: `${hg} : ${ag}`,
+      penalties: f.penalties ? `${f.penalties.home} : ${f.penalties.away} пен.` : undefined,
+      outcome, // относительно текущей пары (homeTid против awayTid)
+      winnerId: hg > ag ? f.home : (ag > hg ? f.away : null),
+      stadium: team(f.home)?.stadium || '',
+      isSimulated: true
+    });
+    if (matches.length >= 10) break;
+  }
+
+  // 2. Если сыграно меньше 10 матчей в симуляторе, дополняем детерминированной исторической статистикой встреч
+  if (matches.length < 10) {
+    const need = 10 - matches.length;
+    let seedVal = 0;
+    for (let i = 0; i < (homeTid + awayTid).length; i++) {
+      seedVal = (seedVal * 31 + (homeTid + awayTid).charCodeAt(i)) & 0xffffff;
+    }
+
+    const pseudoRandom = (step: number) => {
+      const x = Math.sin(seedVal + step * 7919) * 10000;
+      return x - Math.floor(x);
+    };
+
+    const comps = ['РПЛ', 'РПЛ', 'РПЛ', 'Кубок России', 'РПЛ', 'РПЛ', 'Кубок России', 'Суперкубок'];
+    const years = [2026, 2025, 2025, 2024, 2024, 2023, 2023, 2022, 2022, 2021];
+    const months = ['03', '05', '08', '09', '10', '11', '04', '07', '12', '06'];
+    const days = ['12', '24', '18', '03', '29', '15', '07', '21', '30', '14'];
+
+    for (let i = 0; i < need; i++) {
+      const idx = matches.length;
+      const r1 = pseudoRandom(idx * 3 + 1);
+      const r2 = pseudoRandom(idx * 3 + 2);
+      const r3 = pseudoRandom(idx * 3 + 3);
+
+      const altHome = idx % 2 === 0;
+      const currentHomeId = altHome ? homeTid : awayTid;
+      const currentAwayId = altHome ? awayTid : homeTid;
+
+      // Сгенерируем реалистичный футбольный счет
+      let hScore = 0;
+      let aScore = 0;
+      if (r1 < 0.28) {
+        // Ничья
+        hScore = r2 < 0.5 ? 1 : (r2 < 0.85 ? 0 : 2);
+        aScore = hScore;
+      } else if (r1 < 0.65) {
+        // Победа хозяев
+        hScore = r2 < 0.4 ? 1 : (r2 < 0.8 ? 2 : 3);
+        aScore = r3 < 0.5 ? 0 : 1;
+        if (hScore <= aScore) hScore = aScore + 1;
+      } else {
+        // Победа гостей
+        aScore = r2 < 0.45 ? 1 : (r2 < 0.85 ? 2 : 3);
+        hScore = r3 < 0.6 ? 0 : 1;
+        if (aScore <= hScore) aScore = hScore + 1;
+      }
+
+      const isDirectHome = currentHomeId === homeTid;
+      const hgRel = isDirectHome ? hScore : aScore;
+      const agRel = isDirectHome ? aScore : hScore;
+      let outcome: 'home' | 'away' | 'draw' = 'draw';
+      if (hgRel > agRel) outcome = 'home';
+      else if (agRel > hgRel) outcome = 'away';
+
+      const yr = years[idx % years.length];
+      const mo = months[idx % months.length];
+      const dy = days[idx % days.length];
+
+      matches.push({
+        id: `hist_${homeTid}_${awayTid}_${idx}`,
+        date: `${yr}-${mo}-${dy}`,
+        time: '19:00',
+        comp: comps[idx % comps.length],
+        round: comps[idx % comps.length].includes('Кубок') ? '1/4 финала' : `${(idx % 25) + 1} тур`,
+        homeId: currentHomeId,
+        awayId: currentAwayId,
+        homeName: tn(currentHomeId),
+        awayName: tn(currentAwayId),
+        homeLogo: teamLogo(currentHomeId),
+        awayLogo: teamLogo(currentAwayId),
+        homeGoals: hScore,
+        awayGoals: aScore,
+        score: `${hScore} : ${aScore}`,
+        outcome,
+        winnerId: hScore > aScore ? currentHomeId : (aScore > hScore ? currentAwayId : null),
+        stadium: team(currentHomeId)?.stadium || '',
+        isSimulated: false
+      });
+    }
+  }
+
+  // 3. Подсчет итоговой статистики по 10 встречам
+  let homeWins = 0, draws = 0, awayWins = 0, homeGoalsTotal = 0, awayGoalsTotal = 0;
+  for (const m of matches) {
+    if (m.outcome === 'home') homeWins++;
+    else if (m.outcome === 'away') awayWins++;
+    else draws++;
+
+    if (m.homeId === homeTid) {
+      homeGoalsTotal += m.homeGoals;
+      awayGoalsTotal += m.awayGoals;
+    } else {
+      homeGoalsTotal += m.awayGoals;
+      awayGoalsTotal += m.homeGoals;
+    }
+  }
+
+  return {
+    homeTeam: { id: homeTid, name: hName, logo: hLogo },
+    awayTeam: { id: awayTid, name: aName, logo: aLogo },
+    stats: {
+      total: matches.length,
+      homeWins,
+      draws,
+      awayWins,
+      homeGoals: homeGoalsTotal,
+      awayGoals: awayGoalsTotal
+    },
+    matches
+  };
+}
 
 app.get('/api/match/:id', (req: any, res) => {
   const f = fx(req.params.id);
@@ -3288,7 +3171,8 @@ app.get('/api/match/:id', (req: any, res) => {
     coaches: {
       home: { coach: coachHome, synergy: computeCoachSynergy(coachHome, db.tactics[f.home]) },
       away: { coach: coachAway, synergy: computeCoachSynergy(coachAway, db.tactics[f.away]) }
-    }
+    },
+    h2h: getHeadToHead(f.home, f.away, f.id)
   };
   if (m && (f.status === 'live' || f.status === 'done')) {
     out.events = f.status === 'live' ? m.events.slice(0, f.pos) : m.events;

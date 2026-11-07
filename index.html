@@ -945,7 +945,7 @@ async function pgHome(app) {
   function renderTopTransfers(limit = 2) {
     const list = trTab === 'expensive' ? (topTr?.expensive || []) : (topTr?.valuable || []);
     if (!list.length) {
-      return '<div class="empty">Нет данных</div>';
+      return '<div class="empty" style="padding:16px 0;color:var(--muted)">В текущем сезоне трансферов пока не совершено.</div>';
     }
     const sliced = limit ? list.slice(0, limit) : list;
     return sliced.map((t, idx) => renderTransferItem(t, idx, trTab)).join('');
@@ -1727,7 +1727,7 @@ ${motm && motmPlayer ? `
   </div>
   <div style="margin-top:8px;font-size:13.5px;color:var(--ink)">${e(motm.headline || motm.interview?.headline || '')}</div>
 </div>` : ''}
-<div class="tabs" id="mt">${[['live', 'Трансляция'], ['stats', 'Статистика'], ['lineups', 'Составы'], ...(motm || f.status === 'done' ? [['interview', 'Интервью и MOTM']] : []), ...(S.me?.role === 'admin' ? [['admin', 'Админ']] : [])].map(([k, t]) => `<button data-k="${k}" class="${k === mtab ? 'on' : ''}">${t}</button>`).join('')}</div>
+<div class="tabs" id="mt">${[['live', 'Трансляция'], ['stats', 'Статистика'], ['lineups', 'Составы'], ['h2h', 'Последние встречи'], ...(motm || f.status === 'done' ? [['interview', 'Интервью и MOTM']] : []), ...(S.me?.role === 'admin' ? [['admin', 'Админ']] : [])].map(([k, t]) => `<button data-k="${k}" class="${k === mtab ? 'on' : ''}">${t}</button>`).join('')}</div>
 <div id="mbody"></div>`;
 
   const bBack = app.querySelector('#btn-back');
@@ -1913,6 +1913,126 @@ function paintMatch() {
         </div>`}
       </div>`;
     }).join('') + '</div>';
+  } else if (mtab === 'h2h') {
+    const h2h = M.h2h;
+    if (!h2h || !h2h.matches || !h2h.matches.length) {
+      b.innerHTML = '<div class="panel"><div class="empty">История встреч между этими командами пока не сформирована.</div></div>';
+      return;
+    }
+
+    const { homeTeam, awayTeam, stats, matches } = h2h;
+    const total = stats.total || 10;
+    const homeWinPct = Math.round((stats.homeWins / total) * 100);
+    const drawPct = Math.round((stats.draws / total) * 100);
+    const awayWinPct = Math.round((stats.awayWins / total) * 100);
+
+    b.innerHTML = `
+      <div class="panel" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+          <div>
+            <h3 style="margin:0;display:flex;align-items:center;gap:8px">
+              <span>⚔️</span> История личных встреч (последние 10 матчей)
+            </h3>
+            <div class="small muted" style="margin-top:2px">Статистика очных поединков в РПЛ и Кубках</div>
+          </div>
+          <div class="tag" style="background:#f1f5f9;font-weight:700">Всего игр: ${total}</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;background:var(--soft);padding:14px 18px;border-radius:12px;border:1px solid var(--line);margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <img class="t-logo lg" src="${homeTeam.logo}" alt="${e(homeTeam.name)}" style="width:48px;height:48px;object-fit:contain"/>
+            <div>
+              <div style="font-weight:800;font-size:16px">${e(homeTeam.name)}</div>
+              <div style="color:var(--accent);font-weight:700;font-size:18px">${stats.homeWins} <span style="font-size:12px;color:var(--muted);font-weight:normal">побед</span></div>
+              <div class="small muted">${stats.homeGoals} забито</div>
+            </div>
+          </div>
+
+          <div style="text-align:center;padding:0 12px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700">Ничьи</div>
+            <div style="font-weight:800;font-size:22px;color:var(--ink)">${stats.draws}</div>
+            <div class="small muted" style="font-size:11px">раздел очков</div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;text-align:right">
+            <div>
+              <div style="font-weight:800;font-size:16px">${e(awayTeam.name)}</div>
+              <div style="color:#2563eb;font-weight:700;font-size:18px">${stats.awayWins} <span style="font-size:12px;color:var(--muted);font-weight:normal">побед</span></div>
+              <div class="small muted">${stats.awayGoals} забито</div>
+            </div>
+            <img class="t-logo lg" src="${awayTeam.logo}" alt="${e(awayTeam.name)}" style="width:48px;height:48px;object-fit:contain"/>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600">
+            <span>${homeWinPct}% побед ${e(homeTeam.name)}</span>
+            <span>${drawPct}% ничьих</span>
+            <span>${awayWinPct}% побед ${e(awayTeam.name)}</span>
+          </div>
+          <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:#e2e8f0">
+            <div style="width:${homeWinPct}%;background:var(--accent)" title="Победы ${e(homeTeam.name)}: ${stats.homeWins}"></div>
+            <div style="width:${drawPct}%;background:#94a3b8" title="Ничьи: ${stats.draws}"></div>
+            <div style="width:${awayWinPct}%;background:#2563eb" title="Победы ${e(awayTeam.name)}: ${stats.awayWins}"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin:0 0 12px">Хронология последних встреч</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${matches.map((m, idx) => {
+            const isHomeWinner = m.outcome === 'home';
+            const isAwayWinner = m.outcome === 'away';
+            const isDraw = m.outcome === 'draw';
+
+            let badgeHtml = '';
+            if (isDraw) {
+              badgeHtml = '<span class="tag" style="background:#f1f5f9;color:var(--muted);font-size:11px">Ничья</span>';
+            } else if (isHomeWinner) {
+              badgeHtml = `<span class="tag" style="background:#ecfdf5;color:#059669;border-color:#a7f3d0;font-size:11px">Победа ${e(homeTeam.name)}</span>`;
+            } else {
+              badgeHtml = `<span class="tag" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe;font-size:11px">Победа ${e(awayTeam.name)}</span>`;
+            }
+
+            return `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:#fff;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:10px;min-width:140px">
+                  <span class="tag" style="font-size:11px;font-weight:700;background:var(--soft)">#${idx + 1}</span>
+                  <div>
+                    <div style="font-weight:600;font-size:13px">${e(m.date)}</div>
+                    <div class="small muted" style="font-size:11px">${e(m.comp)}${m.round ? ` · ${e(m.round)}` : ''}</div>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex:1;min-width:240px">
+                  <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end;font-weight:${m.homeId === m.winnerId ? '700' : '500'}">
+                    <span>${e(m.homeName)}</span>
+                    <img class="t-logo sm" src="${m.homeLogo}" alt="" style="width:22px;height:22px;object-fit:contain"/>
+                  </div>
+                  <div style="background:var(--soft);padding:4px 10px;border-radius:6px;font-weight:800;font-size:15px;letter-spacing:1px;min-width:54px;text-align:center">
+                    ${e(m.score)}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-start;font-weight:${m.awayId === m.winnerId ? '700' : '500'}">
+                    <img class="t-logo sm" src="${m.awayLogo}" alt="" style="width:22px;height:22px;object-fit:contain"/>
+                    <span>${e(m.awayName)}</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;min-width:130px">
+                  ${badgeHtml}
+                  ${m.isSimulated ? `
+                    <a href="#/match/${m.id}" class="btn alt sm" style="font-size:11px;padding:3px 8px" title="Открыть протокол сыгранного матча">
+                      Матч →
+                    </a>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
   } else if (mtab === 'admin') {
     const c = M.ctx || {};
     b.innerHTML = `<div class="panel">

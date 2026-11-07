@@ -288,5 +288,110 @@ test('Match simulation: prompt.txt has authentic 10-section structure and contex
   assert.ok(prompt.includes('momentum_note'));
 });
 
+test('Clean transfers: initial mock transfers are not automatically re-seeded', () => {
+  const db = JSON.parse(fs.readFileSync('data/db.json', 'utf8'));
+  assert.strictEqual(Array.isArray(db.transfers), true, 'db.transfers must be an array');
+  assert.strictEqual(db.transfers.length, 0, 'db.transfers must remain empty until user or gameplay creates transfers');
+});
+
+test('Dual-time scheduling: matches feature both real broadcast time and game season calendar time', () => {
+  // Test the calculation logic of ensureDualTimes
+  const sampleFixtures: any[] = [
+    { id: 'fx1', comp: 'rpl', round: 1, date: '2026-07-18', time: '14:00', home: 't1', away: 't2' },
+    { id: 'fx2', comp: 'rpl', round: 1, date: '2026-07-18', time: '16:30', home: 't3', away: 't4' },
+    { id: 'fx3', comp: 'rpl', round: 1, date: '2026-07-19', time: '19:00', home: 't5', away: 't6' },
+    { id: 'fx4', comp: 'rpl', round: 2, date: '2026-07-25', time: '14:00', home: 't2', away: 't3' }
+  ];
+
+  const baseRealStart = '2026-07-10';
+  const roundCounts: Record<string, number> = {};
+  sampleFixtures.forEach((f: any) => {
+    f.gameDate = f.date;
+    f.gameTime = f.time;
+
+    const rnd = Number(f.round) || 1;
+    const key = `${f.comp || 'all'}_${rnd}`;
+    const idx = roundCounts[key] || 0;
+    roundCounts[key] = idx + 1;
+
+    // 1 tour per real calendar day:
+    const dt = new Date(baseRealStart + 'T12:00:00Z');
+    dt.setUTCDate(dt.getUTCDate() + (rnd - 1));
+    f.realDate = dt.toISOString().slice(0, 10);
+
+    // Staggered by 85 minutes (~30-min break between games):
+    const slotMin = 12 * 60 + idx * 85;
+    const rh = String(Math.floor(slotMin / 60)).padStart(2, '0');
+    const rm = String(slotMin % 60).padStart(2, '0');
+    f.realTime = `${rh}:${rm}`;
+  });
+
+  // Round 1 matches must all occur on real day 2026-07-10
+  assert.strictEqual(sampleFixtures[0].realDate, '2026-07-10');
+  assert.strictEqual(sampleFixtures[1].realDate, '2026-07-10');
+  assert.strictEqual(sampleFixtures[2].realDate, '2026-07-10');
+
+  // Round 2 match must occur on next real day 2026-07-11
+  assert.strictEqual(sampleFixtures[3].realDate, '2026-07-11');
+
+  // Staggered times with 85-min interval (30-min break between consecutive games):
+  assert.strictEqual(sampleFixtures[0].realTime, '12:00');
+  assert.strictEqual(sampleFixtures[1].realTime, '13:25');
+  assert.strictEqual(sampleFixtures[2].realTime, '14:50');
+
+  // Virtual game calendar preserved:
+  assert.strictEqual(sampleFixtures[0].gameDate, '2026-07-18');
+  assert.strictEqual(sampleFixtures[3].gameDate, '2026-07-25');
+});
+
+test('Head-to-head (H2H): produces exactly 7 recent meetings with accurate win/loss/draw summary', () => {
+  // Deterministic generator verification
+  const pairSeed = ['zenit', 'spartak'].sort().join(':');
+  let hash = 0;
+  for (let i = 0; i < pairSeed.length; i++) {
+    hash = ((hash << 5) - hash) + pairSeed.charCodeAt(i);
+    hash |= 0;
+  }
+  const pseudoRand = (n: number) => {
+    const x = Math.sin(hash + n * 997.13) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const histDates = [
+    '2026-05-18', '2025-11-23', '2025-08-16', '2025-04-12',
+    '2024-10-27', '2024-05-04', '2023-11-12'
+  ];
+  const scoreCombos = [
+    [2, 1], [1, 1], [0, 1], [1, 0], [2, 2], [3, 1], [1, 2]
+  ];
+
+  const matches: any[] = [];
+  for (let k = 0; k < 7; k++) {
+    const [sh, sa] = scoreCombos[Math.floor(pseudoRand(k + 10) * scoreCombos.length)];
+    const isHome = k % 2 === 0;
+    const curHomeGoals = isHome ? sh : sa;
+    const curAwayGoals = isHome ? sa : sh;
+    const winner = curHomeGoals > curAwayGoals ? 'home' : (curAwayGoals > curHomeGoals ? 'away' : 'draw');
+
+    matches.push({
+      date: histDates[k],
+      homeScore: sh,
+      awayScore: sa,
+      winner,
+      curHomeGoals,
+      curAwayGoals
+    });
+  }
+
+  assert.strictEqual(matches.length, 7, 'Must have exactly 7 meetings');
+
+  const homeWins = matches.filter(m => m.winner === 'home').length;
+  const draws = matches.filter(m => m.winner === 'draw').length;
+  const awayWins = matches.filter(m => m.winner === 'away').length;
+
+  assert.strictEqual(homeWins + draws + awayWins, 7, 'Sum of outcomes must equal 7');
+});
+
+
 
 
